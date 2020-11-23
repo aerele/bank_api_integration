@@ -16,5 +16,8 @@ setup(
 	packages=find_packages(),
 	zip_safe=False,
 	include_package_data=True,
-	install_requires=install_requires
+	install_requires=install_requires,
+	dependency_links=[
+		'git+https://github.com/KaviyaPeriyasamy/bankingapi.git#egg=banking_api-0.1.0'],
+	python_requires='>=3.6'
 )

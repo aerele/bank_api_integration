@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
-# import frappe
+import frappe
 
 def execute(filters=None):
 	columns, data = [], []
@@ -11,4 +11,5 @@ def execute(filters=None):
 	{'label': 'Debit', 'fieldname': 'debit', 'fieldtype': 'Currency', 'options': 'Currency', 'width': 180},
 	{'label': 'Balance', 'fieldname': 'balance', 'fieldtype': 'Currency', 'options': 'Currency', 'width': 180},
 	{'label': 'Remarks', 'fieldname': 'remarks', 'fieldtype': 'Data', 'options': None, 'width': 180}]
+	data = frappe.get_list("Bank Statement", fields=["txn_date", "credit", "debit", "balance", "remarks"])
 	return columns, data

@@ -102,7 +102,13 @@ app_license = "MIT"
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
+scheduler_events = {
+	"cron": {
+		"0/30 * * * *": [
+			"bank_api_integration.bank_api_integration.doctype.bank_statement.bank_statement.fetch_statement",
+		]
+	},
+}
 # 	"all": [
 # 		"bank_api_integration.tasks.all"
 # 	],
