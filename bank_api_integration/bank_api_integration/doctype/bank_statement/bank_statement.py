@@ -6,15 +6,20 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 import banking_api
-from banking_api.CommonProvider import CommonProvider
+from banking_api.common_provider import CommonProvider
 
 class BankStatement(Document):
 	pass
 
+provider  = frappe.db.get_single_value('Bank API Integration Settings', 'bank_api_provider')
+prov = CommonProvider(provider)
+
 def fetch_statement():
-	provider  = frappe.db.get_single_value('Bank API Integration Settings', 'bank_api_provider')
-	prov = CommonProvider(provider)
 	for stmt in prov.fetch_statement():
 		stmt['doctype'] = "Bank Statement"
-		if frappe.db.exists('Bank Statement', {'txn_date': stmt['txn_date'], 'balance': stmt['balance']}):
+		if not frappe.db.exists('Bank Statement', {'txn_date': stmt['txn_date'], 'balance': stmt['balance']}):
 			frappe.get_doc(stmt).save()
+
+@frappe.whitelist()
+def fetch_balance():
+	return prov.fetch_balance()

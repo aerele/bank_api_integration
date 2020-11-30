@@ -1,6 +1,6 @@
 {
  "actions": [],
- "autoname": "field:txn_date",
+ "autoname": "ST.#####",
  "creation": "2020-11-21 11:10:55.210049",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -17,8 +17,7 @@
   {
    "fieldname": "txn_date",
    "fieldtype": "Data",
-   "label": "Txn Date",
-   "unique": 1
+   "label": "Txn Date"
   },
   {
    "fieldname": "credit",
@@ -47,7 +46,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2020-11-21 12:31:08.215737",
+ "modified": "2020-11-30 06:10:01.201312",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bank Statement",

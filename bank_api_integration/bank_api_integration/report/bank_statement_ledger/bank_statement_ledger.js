@@ -8,8 +8,19 @@ frappe.query_reports["Bank Statement Ledger"] = {
 			"fieldname":"effective_balance",
 			"label": __("Effective Balance"),
 			"fieldtype": "Currency",
-			"default": 0,
 			"read_only": 1
 		},
-	]
+	],
+	onload: function(frm)
+	{
+		frappe.call({
+			method: "bank_api_integration.bank_api_integration.doctype.bank_statement.bank_statement.fetch_balance",
+			freeze: true,
+			callback: function(r) {
+			  if(r.message) {
+				frappe.query_report.set_filter_value('effective_balance',r.message);
+			  }
+			}
+		  });
+	}
 };
