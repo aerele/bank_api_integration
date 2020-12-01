@@ -8,14 +8,15 @@ from frappe.model.document import Document
 import banking_api
 from banking_api.common_provider import CommonProvider
 
-class BankStatement(Document):
+class BankBalance(Document):
 	pass
 
 provider  = frappe.db.get_single_value('Bank API Integration Settings', 'bank_api_provider')
 prov = CommonProvider(provider)
 
-def fetch_statement():
-	for stmt in prov.fetch_statement():
-		if not frappe.db.exists('Bank Statement', stmt):
-			stmt['doctype'] = "Bank Statement"
-			frappe.get_doc(stmt).save()
+def fetch_balance():
+	bal = prov.fetch_balance()
+	if not frappe.db.exists('Bank Balance', bal):
+		bal['doctype'] = 'Bank Balance'
+		frappe.get_doc(bal).save()
+

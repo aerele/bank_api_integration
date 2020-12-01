@@ -1,33 +1,31 @@
 {
  "actions": [],
- "autoname": "ST.#####",
- "creation": "2020-11-21 11:10:55.210049",
+ "autoname": "BL.#####",
+ "creation": "2020-12-01 12:33:44.838938",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "txn_date",
-  "debit",
-  "remarks",
+  "account_no",
+  "date",
   "column_break_3",
-  "credit",
-  "balance"
+  "balance",
+  "currency"
  ],
  "fields": [
   {
-   "fieldname": "txn_date",
+   "fieldname": "account_no",
    "fieldtype": "Data",
-   "label": "Txn Date"
+   "label": "Account No"
   },
   {
-   "fieldname": "credit",
-   "fieldtype": "Currency",
-   "label": "Credit"
+   "fieldname": "date",
+   "fieldtype": "Data",
+   "label": "Date"
   },
   {
-   "fieldname": "debit",
-   "fieldtype": "Currency",
-   "label": "Debit"
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "balance",
@@ -35,22 +33,18 @@
    "label": "Balance"
   },
   {
-   "fieldname": "remarks",
+   "fieldname": "currency",
    "fieldtype": "Data",
-   "label": "Remarks"
-  },
-  {
-   "fieldname": "column_break_3",
-   "fieldtype": "Column Break"
+   "label": "Currency"
   }
  ],
  "in_create": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2020-12-01 14:14:13.722300",
+ "modified": "2020-12-01 14:13:49.773970",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
- "name": "Bank Statement",
+ "name": "Bank Balance",
  "owner": "Administrator",
  "permissions": [
   {

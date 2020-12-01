@@ -106,6 +106,7 @@ scheduler_events = {
 	"cron": {
 		"0/30 * * * *": [
 			"bank_api_integration.bank_api_integration.doctype.bank_statement.bank_statement.fetch_statement",
+			"bank_api_integration.bank_api_integration.doctype.bank_balance.bank_balance.fetch_balance"
 		]
 	},
 }
