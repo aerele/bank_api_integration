@@ -1,13 +1,9 @@
 ## Banking API Integration
+Frappe application to achieve banking API integration.
  
 ### Bank Statement Ledger
 
-![Screenshot from 2020-12-01 16-10-37](https://user-images.githubusercontent.com/36359901/100730911-b3676f00-33f0-11eb-9b68-4e9fb9c0263d.png)
-
-
-### Bank Balance Ledger
-
-![Screenshot from 2020-12-01 16-44-42](https://user-images.githubusercontent.com/36359901/100733686-8c12a100-33f4-11eb-81e9-ed79a0339ffb.png)
+![Screenshot from 2020-12-03 15-35-41](https://user-images.githubusercontent.com/36359901/100995062-47fed800-357d-11eb-8adc-d65afd54724e.png)
 
 ### API Integration Settings
 
