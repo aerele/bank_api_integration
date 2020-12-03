@@ -9,7 +9,7 @@
  "filters": [],
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2020-11-21 11:19:17.507043",
+ "modified": "2020-12-03 19:17:55.312425",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bank Statement Ledger",
@@ -27,6 +27,9 @@
   },
   {
    "role": "Auditor"
+  },
+  {
+   "role": "Administrator"
   }
  ]
 }
