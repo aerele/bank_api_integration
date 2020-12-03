@@ -19,3 +19,7 @@ def fetch_statement():
 		if not frappe.db.exists('Bank Statement', stmt):
 			stmt['doctype'] = "Bank Statement"
 			frappe.get_doc(stmt).save()
+
+@frappe.whitelist()
+def fetch_balance():
+	return prov.fetch_balance()
