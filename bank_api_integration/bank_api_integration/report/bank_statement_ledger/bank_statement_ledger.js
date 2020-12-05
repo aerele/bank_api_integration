@@ -32,7 +32,7 @@ frappe.query_reports["Bank Statement Ledger"] = {
 	onload: function(frm)
 	{
 	frappe.call({
-	method: "bank_api_integration.bank_api_integration.doctype.bank_statement.bank_statement.fetch_balance",
+	method: "bank_api_integration.bank_api_integration.doctype.bank_api_integration_settings.bank_api_integration_settings.fetch_balance",
 	freeze: true,
 	callback: function(r) {
 		if(r.message) {

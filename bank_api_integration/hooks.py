@@ -105,7 +105,7 @@ app_license = "MIT"
 scheduler_events = {
 	"cron": {
 		"0/30 * * * *": [
-			"bank_api_integration.bank_api_integration.doctype.bank_statement.bank_statement.fetch_statement"
+			"bank_api_integration.bank_api_integration.doctype.bank_api_integration_settings.bank_api_integration_settings.sync_transactions"
 		]
 	},
 }
@@ -149,3 +149,4 @@ scheduler_events = {
 #
 # auto_cancel_exempted_doctypes = ["Auto Repeat"]
 
+page_js = {"bank-reconciliation" : "public/js/bank_reconciliation.js"}
