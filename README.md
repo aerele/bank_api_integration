@@ -9,5 +9,5 @@ Frappe application to achieve banking API integration.
  
 ### Bank Statement Ledger
 
-![Screenshot from 2020-12-03 15-35-41](https://user-images.githubusercontent.com/36359901/100995062-47fed800-357d-11eb-8adc-d65afd54724e.png)
+![Screenshot from 2020-12-05 10-48-29](https://user-images.githubusercontent.com/36359901/101234692-8dd7af80-36e7-11eb-8d6c-e6f0caeb7c4c.png)
 
