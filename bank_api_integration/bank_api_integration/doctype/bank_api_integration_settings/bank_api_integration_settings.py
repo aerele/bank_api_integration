@@ -46,8 +46,8 @@ def new_bank_transaction(transaction):
 			'doctype': 'Bank Transaction',
 			'date': getdate(transaction['txn_date'].split(' ')[0]),
 			"transaction_id": transaction["txn_id"],
-			'debit': abs(float(transaction['debit'].replace(',',''))) if transaction['debit'] else 0,
-			'credit': abs(float(transaction['credit'].replace(',',''))) if transaction['credit'] else 0,
+			'withdrawal': abs(float(transaction['debit'].replace(',',''))) if transaction['debit'] else 0,
+			'deposit': abs(float(transaction['credit'].replace(',',''))) if transaction['credit'] else 0,
 			'description': transaction['remarks'],
 			'bank_account': bank_account
 		})
