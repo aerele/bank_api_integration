@@ -59,7 +59,7 @@ app_license = "MIT"
 # ------------
 
 # before_install = "bank_api_integration.install.before_install"
-# after_install = "bank_api_integration.install.after_install"
+after_install = "bank_api_integration.bank_api_integration.doctype.bank_api_integration_settings.bank_api_integration_settings.create_default_roles"
 
 # Desk Notifications
 # ------------------

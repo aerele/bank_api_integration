@@ -55,3 +55,11 @@ def new_bank_transaction(transaction):
 		new_transaction.submit()
 		result.append(new_transaction.name)
 	return result
+
+def create_default_roles():
+	roles = ['Bank Maker','Bank Checker']
+	for role in roles:
+		if not frappe.db.exists('Role', role):
+			role_doc = frappe.new_doc("Role")
+			role_doc.role_name = role
+			role_doc.save()
