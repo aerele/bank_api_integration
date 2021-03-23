@@ -89,6 +89,7 @@
    "reqd": 1
   },
   {
+   "depends_on": "doc.docstatus == 1 ",
    "fieldname": "fetch_failed_transaction",
    "fieldtype": "Button",
    "label": "Fetch Failed Transaction"
@@ -102,7 +103,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-03-20 13:41:02.100838",
+ "modified": "2021-03-23 18:08:56.477840",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bulk Outward Bank Payment",
