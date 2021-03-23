@@ -1,20 +1,23 @@
 {
  "actions": [],
- "autoname": "format:OBP-{YYYY}-{MM}-{####}",
+ "autoname": "format:OBP{YYYY}{MM}{####}",
  "creation": "2021-03-11 13:09:41.879350",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "company",
   "reconcile_action",
+  "column_break_3",
+  "company_bank_account",
+  "transaction_type",
+  "section_break_4",
   "party_type",
   "party",
   "amount",
   "column_break_5",
   "bobp",
-  "is_initiated",
-  "payment_status",
-  "retry_count",
+  "update_transaction_status",
   "error_message",
   "status",
   "reconcile_section",
@@ -47,11 +50,13 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "status",
    "fieldtype": "Select",
    "hidden": 1,
+   "in_list_view": 1,
    "label": "Status",
-   "options": "\nPending\nApproved\nRejected"
+   "options": "\nPending\nApproved\nRejected\nInitiation Error\nInitiation Failed\nInitiated\nTransaction Error\nTransaction Pending\nTransaction Failed\nTransaction Completed"
   },
   {
    "fieldname": "bobp",
@@ -70,18 +75,20 @@
    "read_only": 1
   },
   {
-   "default": "Auto Reconcile",
+   "default": "Auto Reconcile Oldest First Invoice",
    "fieldname": "reconcile_action",
    "fieldtype": "Select",
    "label": "Reconcile Action",
-   "options": "\nAuto Reconcile\nSkip Reconcile\nManual Reconcile",
+   "options": "\nAuto Reconcile Oldest First Invoice\nSkip Reconcile\nManual Reconcile",
    "reqd": 1
   },
   {
-   "depends_on": "eval: doc.payment_status === 'Error';",
+   "allow_on_submit": 1,
+   "depends_on": "eval: in_list(['Transaction Error','Transaction Failed', 'Transaction Pending','Initiation Error', 'Initiation Failed'], doc.status);",
    "fieldname": "error_message",
    "fieldtype": "Text",
    "label": "Error Message",
+   "no_copy": 1,
    "read_only": 1
   },
   {
@@ -89,21 +96,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "0",
-   "fieldname": "is_initiated",
-   "fieldtype": "Check",
-   "label": "Is Initiated",
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "retry_count",
-   "fieldtype": "Int",
-   "label": "Retry Count",
-   "read_only": 1
-  },
-  {
-   "collapsible": 1,
    "depends_on": "eval: doc.reconcile_action === 'Manual Reconcile'",
    "fieldname": "reconcile_section",
    "fieldtype": "Section Break",
@@ -121,17 +113,48 @@
    "options": "Payment References"
   },
   {
-   "fieldname": "payment_status",
-   "fieldtype": "Data",
-   "label": "Payment Status",
-   "no_copy": 1,
-   "read_only": 1
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company_bank_account",
+   "fieldtype": "Link",
+   "label": "Company Bank Account",
+   "options": "Bank Account",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break",
+   "label": "Party Details"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "transaction_type",
+   "fieldtype": "Select",
+   "label": "Transaction Type",
+   "options": "\nRTG\nRGS\nIFS\nOWN\nTPA\nVAP",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: in_list(['Initiated','Transaction Error'], doc.status);",
+   "fieldname": "update_transaction_status",
+   "fieldtype": "Button",
+   "label": "Update Transaction Status",
+   "no_copy": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-03-15 11:56:35.150792",
+ "modified": "2021-03-23 17:55:29.762519",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Outward Bank Payment",

@@ -1,17 +1,23 @@
 {
  "actions": [],
- "autoname": "format:BOBP-{YYYY}-{MM}-{####}",
+ "autoname": "format:BOBP{YYYY}{MM}{####}",
  "creation": "2021-03-11 15:59:34.364295",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "status",
+  "company",
+  "company_bank_account",
   "reconcile_action",
+  "column_break_7",
+  "fetch_failed_transaction",
+  "update_transaction_status",
+  "section_break_4",
   "outward_bank_payment_details",
-  "amended_from",
   "no_of_payments",
-  "total_payment"
+  "total_payment_amount",
+  "amended_from"
  ],
  "fields": [
   {
@@ -40,18 +46,12 @@
    "read_only": 1
   },
   {
-   "fieldname": "total_payment",
-   "fieldtype": "Currency",
-   "label": "Total Payment",
-   "read_only": 1
-  },
-  {
-   "default": "Auto Reconcile",
+   "default": "Auto Reconcile Oldest First Invoice",
    "fieldname": "reconcile_action",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Reconcile Action",
-   "options": "\nAuto Reconcile\nSkip Reconcile",
+   "options": "\nAuto Reconcile Oldest First Invoice\nSkip Reconcile",
    "reqd": 1
   },
   {
@@ -59,11 +59,50 @@
    "fieldtype": "Int",
    "label": "No of Payments",
    "read_only": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "total_payment_amount",
+   "fieldtype": "Currency",
+   "label": "Total Payment Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "company_bank_account",
+   "fieldtype": "Link",
+   "label": "Company Bank Account",
+   "options": "Bank Account",
+   "reqd": 1
+  },
+  {
+   "fieldname": "fetch_failed_transaction",
+   "fieldtype": "Button",
+   "label": "Fetch Failed Transaction"
+  },
+  {
+   "depends_on": "eval: doc.status === 'Initiated'",
+   "fieldname": "update_transaction_status",
+   "fieldtype": "Button",
+   "label": "Update Transaction Status"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-03-13 15:14:22.445334",
+ "modified": "2021-03-20 13:41:02.100838",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bulk Outward Bank Payment",
