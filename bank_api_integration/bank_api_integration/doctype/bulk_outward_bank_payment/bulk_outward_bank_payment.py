@@ -9,10 +9,10 @@ from frappe.utils import flt
 
 class BulkOutwardBankPayment(Document):
 	def validate(self):
-		total_payment = 0
+		total_payment_amount = 0
 		for row in self.outward_bank_payment_details:
-			total_payment+=flt(row.amount)
-		self.total_payment = total_payment
+			total_payment_amount+=flt(row.amount)
+		self.total_payment_amount = total_payment_amount
 		self.no_of_payments = len(self.outward_bank_payment_details)
 
 	def on_submit(self):
