@@ -1,6 +1,6 @@
 // Copyright (c) 2021, Aerele and contributors
 // For license information, please see license.txt
-
+{% include 'bank_api_integration/bank_api_integration/utils/common_fields.js' %};
 frappe.ui.form.on("Bulk Outward Bank Payment", {
 		after_workflow_action: (frm) => {
 		if(frm.doc.workflow_state == "Rejected"){
