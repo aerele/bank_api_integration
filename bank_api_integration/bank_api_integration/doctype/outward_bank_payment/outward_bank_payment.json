@@ -11,14 +11,14 @@
   "column_break_3",
   "company_bank_account",
   "transaction_type",
+  "update_transaction_status",
   "section_break_4",
   "party_type",
-  "party",
   "amount",
-  "column_break_5",
+  "column_break_9",
+  "party",
+  "section_break_11",
   "bobp",
-  "update_transaction_status",
-  "error_message",
   "status",
   "reconcile_section",
   "get_outstanding_invoice",
@@ -56,6 +56,7 @@
    "hidden": 1,
    "in_list_view": 1,
    "label": "Status",
+   "no_copy": 1,
    "options": "\nPending\nApproved\nRejected\nInitiation Error\nInitiation Failed\nInitiated\nTransaction Error\nTransaction Pending\nTransaction Failed\nTransaction Completed"
   },
   {
@@ -81,19 +82,6 @@
    "label": "Reconcile Action",
    "options": "\nAuto Reconcile Oldest First Invoice\nSkip Reconcile\nManual Reconcile",
    "reqd": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "eval: in_list(['Transaction Error','Transaction Failed', 'Transaction Pending','Initiation Error', 'Initiation Failed'], doc.status);",
-   "fieldname": "error_message",
-   "fieldtype": "Text",
-   "label": "Error Message",
-   "no_copy": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_5",
-   "fieldtype": "Column Break"
   },
   {
    "depends_on": "eval: doc.reconcile_action === 'Manual Reconcile'",
@@ -149,12 +137,21 @@
    "fieldtype": "Button",
    "label": "Update Transaction Status",
    "no_copy": 1
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_11",
+   "fieldtype": "Section Break",
+   "label": "More Information"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-03-23 17:55:29.762519",
+ "modified": "2021-03-23 23:27:11.535602",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Outward Bank Payment",
