@@ -87,6 +87,7 @@ class OutwardBankPayment(Document):
 				"CURRENCY": currency,
 				"TXNTYPE": self.transaction_type,
 				"PAYEENAME": self.party,
+				"REMARKS": 'Testing',
 				"DEBITACC": integration_doc.account_number,
 				"CREDITACC": frappe.db.get_value('Bank Account', 
 						{'party_type': self.party_type,
