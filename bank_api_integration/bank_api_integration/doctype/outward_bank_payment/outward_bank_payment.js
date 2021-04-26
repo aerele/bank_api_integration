@@ -2,6 +2,19 @@
 // For license information, please see license.txt
 {% include 'bank_api_integration/bank_api_integration/utils/common_fields.js' %};
 frappe.ui.form.on('Outward Bank Payment', {
+	refresh: function(frm) {
+		if (frm.doc.docstatus == 1 && frm.doc.status == 'Initiated'){ 
+			frm.add_custom_button(__("Update Transaction Status"), function() {
+			 frm.trigger('update_txn_status');
+		 });}
+	},
+	update_txn_status: function(frm){
+		frappe.call({
+			method: "bank_api_integration.bank_api_integration.doctype.outward_bank_payment.outward_bank_payment.update_transaction_status",
+			freeze: true,
+            args: {obp_name:frm.doc.name}
+		})
+	},
 	after_workflow_action: (frm) => {
 		if(frm.doc.workflow_state == "Rejected"){
 		frm.set_value("status", "Pending");
