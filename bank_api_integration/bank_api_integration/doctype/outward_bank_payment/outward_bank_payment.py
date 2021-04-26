@@ -92,9 +92,7 @@ class OutwardBankPayment(Document):
 						{'party_type': self.party_type,
 						'party': self.party,
 						'is_default': 1
-						},'bank_account_no'),
-				"WORKFLOW_REQD": "N"
-
+						},'bank_account_no')
 			}
 			try:
 				res = prov.initiate_transaction_without_otp(filters)
