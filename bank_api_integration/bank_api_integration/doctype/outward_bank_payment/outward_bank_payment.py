@@ -83,7 +83,7 @@ class OutwardBankPayment(Document):
 						'party': self.party,
 						'is_default': 1
 						},'ifsc_code'),
-				"AMOUNT": self.amount,
+				"AMOUNT": str(self.amount),
 				"CURRENCY": currency,
 				"TXNTYPE": self.transaction_type,
 				"PAYEENAME": self.party,
