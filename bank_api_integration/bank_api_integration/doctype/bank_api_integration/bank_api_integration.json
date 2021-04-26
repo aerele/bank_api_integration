@@ -65,7 +65,7 @@
   },
   {
    "fieldname": "private_key_path",
-   "fieldtype": "Data",
+   "fieldtype": "Password",
    "label": "Private Key Path",
    "mandatory_depends_on": "enabled"
   },
@@ -132,7 +132,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-03-23 11:45:17.007779",
+ "modified": "2021-04-26 11:21:47.217182",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bank API Integration",
