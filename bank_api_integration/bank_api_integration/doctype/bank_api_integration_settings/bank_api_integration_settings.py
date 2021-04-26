@@ -132,11 +132,11 @@ def create_workflow(document_name):
 			'action': state[0],
 			'next_state': state[1],
 			'allowed': 'Bank Checker'})
-
-	for state in approved_next_states['Invoke']:
-		workflow_doc.append('transitions',{'state': 'Approved',
-			'action': 'Invoke',
-			'next_state': state,
-			'allowed': 'Bank Checker'})
+	if document_name == 'Outward Bank Payment':
+		for state in approved_next_states['Invoke']:
+			workflow_doc.append('transitions',{'state': 'Approved',
+				'action': 'Invoke',
+				'next_state': state,
+				'allowed': 'Bank Checker'})
 
 	workflow_doc.save()
