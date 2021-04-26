@@ -107,10 +107,12 @@ def create_workflow(document_name):
 			'workflow_state_field': 'workflow_state',
 			'is_active': 1})
 
-	bank_checker_allowed_state = ['Approved', 'Rejected', 'Initiated',
+	bank_checker_allowed_state = ['Approved', 'Rejected']
+	
+	if document_name == 'Outward Bank Payment':
+		bank_checker_allowed_state += ['Initiated',
 				'Initiation Error', 'Initiation Failed', 'Transaction Failed',
 				'Transaction Error', 'Transaction Pending', 'Transaction Completed']
-	
 	workflow_doc.append('states',{'state': 'Pending',
 				'doc_status': 0,
 				'update_field': 'status',
@@ -125,8 +127,8 @@ def create_workflow(document_name):
 					'allow_edit': 'Bank Checker'})
 
 	pending_next_states = [['Approve', 'Approved'], ['Reject', 'Rejected']]
-	approved_next_states = {'Invoke': ['Initiated', 'Initiation Error', 'Initiation Failed',
-			'Transaction Error', 'Transaction Failed', 'Transaction Pending', 'Transaction Completed']}
+	approved_next_states = {'Invoke': ['Initiated', 'Initiation Error', 'Initiation Failed']}
+	initiated_next_states = {'Invoke': ['Transaction Error', 'Transaction Failed', 'Transaction Pending', 'Transaction Completed']}
 	for state in pending_next_states:
 		workflow_doc.append('transitions',{'state': 'Pending',
 			'action': state[0],
@@ -135,6 +137,11 @@ def create_workflow(document_name):
 	if document_name == 'Outward Bank Payment':
 		for state in approved_next_states['Invoke']:
 			workflow_doc.append('transitions',{'state': 'Approved',
+				'action': 'Invoke',
+				'next_state': state,
+				'allowed': 'Bank Checker'})
+		for state in initiated_next_states['Invoke']:
+			workflow_doc.append('transitions',{'state': 'Initiated',
 				'action': 'Invoke',
 				'next_state': state,
 				'allowed': 'Bank Checker'})
