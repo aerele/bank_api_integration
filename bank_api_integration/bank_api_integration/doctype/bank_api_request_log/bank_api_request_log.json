@@ -1,0 +1,84 @@
+{
+ "actions": [],
+ "autoname": "BANK API-REQ-.#####",
+ "creation": "2021-03-23 23:03:05.045523",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "user",
+  "api_method",
+  "config_details",
+  "response",
+  "column_break_7",
+  "timestamp",
+  "reference_document",
+  "filters"
+ ],
+ "fields": [
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User"
+  },
+  {
+   "fieldname": "response",
+   "fieldtype": "Code",
+   "label": "Response",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Now",
+   "fieldname": "timestamp",
+   "fieldtype": "Datetime",
+   "label": "Timestamp"
+  },
+  {
+   "fieldname": "reference_document",
+   "fieldtype": "Data",
+   "label": "Reference Document"
+  },
+  {
+   "fieldname": "api_method",
+   "fieldtype": "Data",
+   "label": "API Method"
+  },
+  {
+   "fieldname": "filters",
+   "fieldtype": "Code",
+   "label": "Filters",
+   "read_only": 1
+  },
+  {
+   "fieldname": "config_details",
+   "fieldtype": "Code",
+   "label": "Config Details",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2021-03-24 00:17:14.904713",
+ "modified_by": "Administrator",
+ "module": "Bank Api Integration",
+ "name": "Bank API Request Log",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

@@ -1,0 +1,175 @@
+{
+ "actions": [],
+ "autoname": "format:OBP{YYYY}{MM}{####}",
+ "creation": "2021-03-11 13:09:41.879350",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "reconcile_action",
+  "column_break_3",
+  "company_bank_account",
+  "transaction_type",
+  "section_break_4",
+  "party_type",
+  "amount",
+  "column_break_9",
+  "party",
+  "section_break_11",
+  "bobp",
+  "payment_entry",
+  "status",
+  "reconcile_section",
+  "get_outstanding_invoice",
+  "payment_references",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "party_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Party Type",
+   "options": "DocType",
+   "reqd": 1
+  },
+  {
+   "fieldname": "party",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Party",
+   "options": "party_type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "in_list_view": 1,
+   "label": "Status",
+   "no_copy": 1,
+   "options": "\nPending\nApproved\nRejected\nInitiation Error\nInitiation Failed\nInitiated\nTransaction Error\nTransaction Pending\nTransaction Failed\nTransaction Completed"
+  },
+  {
+   "fieldname": "bobp",
+   "fieldtype": "Link",
+   "label": "Bulk Outward Bank Payment",
+   "options": "Bulk Outward Bank Payment",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Outward Bank Payment",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "default": "Auto Reconcile Oldest First Invoice",
+   "fieldname": "reconcile_action",
+   "fieldtype": "Select",
+   "label": "Reconcile Action",
+   "options": "\nAuto Reconcile Oldest First Invoice\nSkip Reconcile\nManual Reconcile",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval: doc.reconcile_action === 'Manual Reconcile'",
+   "fieldname": "reconcile_section",
+   "fieldtype": "Section Break",
+   "label": "Reconcile"
+  },
+  {
+   "fieldname": "get_outstanding_invoice",
+   "fieldtype": "Button",
+   "label": "Get Outstanding Invoice"
+  },
+  {
+   "fieldname": "payment_references",
+   "fieldtype": "Table",
+   "label": "Payment References",
+   "options": "Payment References"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company_bank_account",
+   "fieldtype": "Link",
+   "label": "Company Bank Account",
+   "options": "Bank Account",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break",
+   "label": "Party Details"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "transaction_type",
+   "fieldtype": "Select",
+   "label": "Transaction Type",
+   "options": "\nRTG\nRGS\nIFS\nOWN\nTPA\nVAP",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_11",
+   "fieldtype": "Section Break",
+   "label": "More Information"
+  },
+  {
+   "fieldname": "payment_entry",
+   "fieldtype": "Link",
+   "label": "Payment Entry",
+   "options": "Payment Entry",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-04-26 16:22:34.594125",
+ "modified_by": "Administrator",
+ "module": "Bank Api Integration",
+ "name": "Outward Bank Payment",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

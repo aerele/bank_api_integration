@@ -10,6 +10,7 @@
   "credentials_section",
   "username",
   "api_key",
+  "merchant_id",
   "column_break_4",
   "password",
   "api_secret"
@@ -46,7 +47,7 @@
    "fieldname": "bank_api_provider",
    "fieldtype": "Select",
    "label": "Bank API Provider",
-   "options": "\nTest"
+   "options": "\nTest\nJson Bank"
   },
   {
    "fieldname": "column_break_4",
@@ -57,12 +58,17 @@
    "fieldname": "enabled",
    "fieldtype": "Check",
    "label": "Enabled"
+  },
+  {
+   "fieldname": "merchant_id",
+   "fieldtype": "Data",
+   "label": "Merchant ID"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2020-12-04 11:43:50.127434",
+ "modified": "2021-03-13 17:54:42.167435",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bank API Integration Settings",

@@ -1,0 +1,155 @@
+{
+ "actions": [],
+ "autoname": "format:{bank_api_provider} - {bank_account}",
+ "creation": "2021-03-20 12:24:14.241054",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "enabled",
+  "bank_api_provider",
+  "column_break_3",
+  "use_sandbox",
+  "bank_account",
+  "credentials_section",
+  "corp_id",
+  "user_id",
+  "aggr_id",
+  "aggr_name",
+  "urn",
+  "column_break_4",
+  "ifsc",
+  "account_number",
+  "api_key",
+  "private_key_path",
+  "public_key_attachment"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "bank_api_provider",
+   "fieldtype": "Select",
+   "label": "Bank API Provider",
+   "mandatory_depends_on": "enabled",
+   "options": "\nTest\nICICI"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "bank_account",
+   "fieldtype": "Link",
+   "label": "Bank Account",
+   "mandatory_depends_on": "enabled",
+   "options": "Bank Account"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "credentials_section",
+   "fieldtype": "Section Break",
+   "label": "Credentials"
+  },
+  {
+   "fieldname": "api_key",
+   "fieldtype": "Password",
+   "label": "API Key",
+   "mandatory_depends_on": "enabled"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "private_key_path",
+   "fieldtype": "Password",
+   "label": "Private Key Path",
+   "mandatory_depends_on": "enabled"
+  },
+  {
+   "fieldname": "corp_id",
+   "fieldtype": "Data",
+   "label": "Corp ID",
+   "mandatory_depends_on": "enabled"
+  },
+  {
+   "fieldname": "user_id",
+   "fieldtype": "Data",
+   "label": "User ID",
+   "mandatory_depends_on": "enabled"
+  },
+  {
+   "fieldname": "aggr_id",
+   "fieldtype": "Data",
+   "label": "Aggr ID",
+   "mandatory_depends_on": "enabled"
+  },
+  {
+   "fieldname": "aggr_name",
+   "fieldtype": "Data",
+   "label": "Aggr Name",
+   "mandatory_depends_on": "enabled"
+  },
+  {
+   "fieldname": "urn",
+   "fieldtype": "Data",
+   "label": "URN",
+   "mandatory_depends_on": "enabled"
+  },
+  {
+   "fieldname": "ifsc",
+   "fieldtype": "Data",
+   "label": "IFSC",
+   "mandatory_depends_on": "enabled"
+  },
+  {
+   "fieldname": "account_number",
+   "fieldtype": "Data",
+   "label": "Account Number",
+   "mandatory_depends_on": "enabled"
+  },
+  {
+   "default": "0",
+   "depends_on": "enabled",
+   "fieldname": "use_sandbox",
+   "fieldtype": "Check",
+   "label": "Use Sandbox",
+   "mandatory_depends_on": "enabled"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "public_key_attachment",
+   "fieldtype": "Attach",
+   "label": "Public Key Attachment",
+   "mandatory_depends_on": "enabled"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2021-04-26 11:21:47.217182",
+ "modified_by": "Administrator",
+ "module": "Bank Api Integration",
+ "name": "Bank API Integration",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Administrator",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

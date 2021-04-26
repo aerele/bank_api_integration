@@ -1,0 +1,122 @@
+{
+ "actions": [],
+ "autoname": "format:BOBP{YYYY}{MM}{####}",
+ "creation": "2021-03-11 15:59:34.364295",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "status",
+  "company",
+  "reconcile_action",
+  "column_break_7",
+  "company_bank_account",
+  "transaction_type",
+  "section_break_4",
+  "outward_bank_payment_details",
+  "no_of_payments",
+  "total_payment_amount",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Status",
+   "options": "\nPending\nApproved\nRejected",
+   "read_only": 1
+  },
+  {
+   "allow_bulk_edit": 1,
+   "fieldname": "outward_bank_payment_details",
+   "fieldtype": "Table",
+   "label": "Outward Bank Payment Details",
+   "options": "Outward Bank Payment Details",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Bulk Outward Bank Payment",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "default": "Auto Reconcile Oldest First Invoice",
+   "fieldname": "reconcile_action",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Reconcile Action",
+   "options": "\nAuto Reconcile Oldest First Invoice\nSkip Reconcile",
+   "reqd": 1
+  },
+  {
+   "fieldname": "no_of_payments",
+   "fieldtype": "Int",
+   "label": "No of Payments",
+   "read_only": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "total_payment_amount",
+   "fieldtype": "Currency",
+   "label": "Total Payment Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "company_bank_account",
+   "fieldtype": "Link",
+   "label": "Company Bank Account",
+   "options": "Bank Account",
+   "reqd": 1
+  },
+  {
+   "fieldname": "transaction_type",
+   "fieldtype": "Select",
+   "label": "Transaction Type",
+   "options": "\nRTG\nRGS\nIFS\nOWN\nTPA\nVAP",
+   "reqd": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-04-26 13:56:20.536791",
+ "modified_by": "Administrator",
+ "module": "Bank Api Integration",
+ "name": "Bulk Outward Bank Payment",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
