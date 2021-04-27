@@ -19,6 +19,7 @@ def fetch_balance(doc_name):
 	try:
 		res = prov.fetch_balance(filters)
 		res = json.loads(res)
+		frappe.throw(f'{type(res)} - {res}')
 		if res["RESPONSE"] == "SUCCESS":
 			balance = res['EFFECTIVEBAL']
 	except:
