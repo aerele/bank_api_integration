@@ -83,11 +83,10 @@ class OutwardBankPayment(Document):
 						'party': self.party,
 						'is_default': 1
 						},'ifsc_code'),
-				"AMOUNT": "1.00",
+				"AMOUNT": str(self.amount),
 				"CURRENCY": currency,
 				"TXNTYPE": self.transaction_type,
 				"PAYEENAME": self.party,
-				"REMARKS": 'Testing',
 				"DEBITACC": integration_doc.account_number,
 				"CREDITACC": frappe.db.get_value('Bank Account', 
 						{'party_type': self.party_type,
