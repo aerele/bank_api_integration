@@ -14,14 +14,15 @@ class BankAPIIntegration(Document):
 @frappe.whitelist()
 def fetch_balance(doc_name):
 	prov, config = get_api_provider_class(doc_name)
+	filters = {"ACCOUNTNO": frappe.db.get_value('Bank API Integration', {'name': doc_name}, 'account_number')}
 	balance = 0
 	try:
-		res = prov.fetch_balance()
+		res = prov.fetch_balance(filters)
 		if res["RESPONSE"] == "SUCCESS":
 			balance = res['EFFECTIVEBAL']
 	except:
 		res = frappe.get_traceback()
-	log_name = log_request(doc_name,'Fetch Balance', config, res)
+	log_name = log_request(doc_name,'Fetch Balance', config, res, filters)
 	return balance
 
 def get_api_provider_class(doc_name):
@@ -40,13 +41,13 @@ def get_api_provider_class(doc_name):
 	prov = CommonProvider(integration_doc.bank_api_provider, config, integration_doc.use_sandbox, proxies, file_paths, frappe.local.site_path)
 	return prov, config
 
-def log_request(doc_name, api_method, config, res):
+def log_request(doc_name, api_method, config, res, filters):
 	request_log = frappe.get_doc({
 		"doctype": "Bank API Request Log",
 		"user": frappe.session.user,
 		"reference_document":doc_name,
 		"api_method": api_method,
-		"filters": None,
+		"filters": str(filters),
 		"config_details": str(config),
 		"response": res
 	})
