@@ -3,7 +3,7 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
-import frappe
+import frappe, json
 from frappe.model.document import Document
 import banking_api
 from banking_api.common_provider import CommonProvider
@@ -18,6 +18,7 @@ def fetch_balance(doc_name):
 	balance = 0
 	try:
 		res = prov.fetch_balance(filters)
+		res = frappe._dict(json.loads(res))
 		if res["RESPONSE"] == "SUCCESS":
 			balance = res['EFFECTIVEBAL']
 	except:
