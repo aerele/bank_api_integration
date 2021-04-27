@@ -22,7 +22,9 @@
   "account_number",
   "api_key",
   "private_key_path",
-  "public_key_attachment"
+  "public_key_attachment",
+  "fetch_balance",
+  "balance_amount"
  ],
  "fields": [
   {
@@ -128,11 +130,21 @@
    "fieldtype": "Attach",
    "label": "Public Key Attachment",
    "mandatory_depends_on": "enabled"
+  },
+  {
+   "fieldname": "fetch_balance",
+   "fieldtype": "Button",
+   "label": "Fetch Balance"
+  },
+  {
+   "fieldname": "balance_amount",
+   "fieldtype": "Float",
+   "label": "Balance Amount"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-04-26 11:21:47.217182",
+ "modified": "2021-04-27 12:05:09.844251",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bank API Integration",
