@@ -83,7 +83,7 @@ class OutwardBankPayment(Document):
 						'party': self.party,
 						'is_default': 1
 						},'ifsc_code'),
-				"AMOUNT": str(1),
+				"AMOUNT": str(1.00),
 				"CURRENCY": currency,
 				"TXNTYPE": self.transaction_type,
 				"PAYEENAME": self.party,
@@ -93,8 +93,7 @@ class OutwardBankPayment(Document):
 						{'party_type': self.party_type,
 						'party': self.party,
 						'is_default': 1
-						},'bank_account_no'),
-				"WORKFLOW_REQD": "N"
+						},'bank_account_no')
 			}
 			try:
 				res = prov.initiate_transaction_without_otp(filters)
