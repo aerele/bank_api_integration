@@ -131,7 +131,7 @@ class OutwardBankPayment(Document):
 		file_paths = {'private_key': integration_doc.get_password(fieldname="private_key_path"),
 			'public_key': frappe.local.site_path + integration_doc.public_key_attachment}
 		
-		prov = CommonProvider(integration_doc.bank_api_provider, config, integration_doc.use_sandbox, proxies, file_paths)
+		prov = CommonProvider(integration_doc.bank_api_provider, config, integration_doc.use_sandbox, proxies, file_paths, frappe.local.site_path)
 		return prov, config
 
 	def log_request(self, api_method, filters, config, res):
