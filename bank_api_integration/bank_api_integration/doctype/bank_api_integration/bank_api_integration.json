@@ -55,7 +55,8 @@
    "fieldname": "api_key",
    "fieldtype": "Password",
    "label": "API Key",
-   "mandatory_depends_on": "eval:in_list([\"ICICI\"], doc.bank_api_provider)"
+   "mandatory_depends_on": "eval:in_list([\"ICICI\"], doc.bank_api_provider)",
+   "no_copy": 1
   },
   {
    "fieldname": "column_break_4",
@@ -66,7 +67,8 @@
    "fieldname": "private_key_path",
    "fieldtype": "Password",
    "label": "Private Key Path",
-   "mandatory_depends_on": "eval:in_list([\"ICICI\"], doc.bank_api_provider)"
+   "mandatory_depends_on": "eval:in_list([\"ICICI\"], doc.bank_api_provider)",
+   "no_copy": 1
   },
   {
    "fieldname": "corp_id",
@@ -137,7 +139,8 @@
    "fieldname": "transaction_password",
    "fieldtype": "Password",
    "label": "Transaction Password",
-   "mandatory_depends_on": "enable_transaction"
+   "mandatory_depends_on": "enable_transaction",
+   "no_copy": 1
   },
   {
    "default": "1",
@@ -163,7 +166,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-05-20 14:40:45.213345",
+ "modified": "2021-05-20 14:44:54.249096",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bank API Integration",
