@@ -12,23 +12,6 @@ from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 class BankAPIIntegration(Document):
 	pass
 
-@frappe.whitelist()
-def fetch_balance(doc_name):
-	prov, config = get_api_provider_class(doc_name)
-	filters = {"ACCOUNTNO": frappe.db.get_value('Bank API Integration', {'name': doc_name}, 'account_number')}
-	balance = 0
-	try:
-		res = prov.fetch_balance(filters)
-		res = json.loads(res)
-		res_type = type(res)
-		frappe.throw(f'{res_type} - {res}')
-		if res["RESPONSE"] == "SUCCESS":
-			balance = res['EFFECTIVEBAL']
-	except:
-		res = frappe.get_traceback()
-	log_name = log_request(doc_name,'Fetch Balance', config, res, filters)
-	return balance
-
 def get_api_provider_class(doc_name):
 	integration_doc = frappe.get_doc('Bank API Integration', doc_name)
 	proxies = frappe.get_site_config().proxies

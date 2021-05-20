@@ -17,14 +17,13 @@
   "aggr_id",
   "aggr_name",
   "urn",
+  "transaction_password",
   "column_break_4",
   "ifsc",
   "account_number",
   "api_key",
   "private_key_path",
-  "public_key_attachment",
-  "fetch_balance",
-  "balance_amount"
+  "public_key_attachment"
  ],
  "fields": [
   {
@@ -132,19 +131,15 @@
    "mandatory_depends_on": "enabled"
   },
   {
-   "fieldname": "fetch_balance",
-   "fieldtype": "Button",
-   "label": "Fetch Balance"
-  },
-  {
-   "fieldname": "balance_amount",
-   "fieldtype": "Float",
-   "label": "Balance Amount"
+   "fieldname": "transaction_password",
+   "fieldtype": "Password",
+   "label": "Transaction Password",
+   "mandatory_depends_on": "enabled"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-04-27 12:05:09.844251",
+ "modified": "2021-05-20 13:48:00.037624",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bank API Integration",
