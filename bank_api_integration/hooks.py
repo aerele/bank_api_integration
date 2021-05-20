@@ -142,5 +142,3 @@ after_install = "bank_api_integration.bank_api_integration.doctype.bank_api_inte
 # exempt linked doctypes from being automatically cancelled
 #
 # auto_cancel_exempted_doctypes = ["Auto Repeat"]
-
-page_js = {"bank-reconciliation" : "public/js/bank_reconciliation.js"}
