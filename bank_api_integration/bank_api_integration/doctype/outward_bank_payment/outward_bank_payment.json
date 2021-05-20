@@ -11,6 +11,7 @@
   "column_break_3",
   "company_bank_account",
   "transaction_type",
+  "transaction_password",
   "section_break_4",
   "party_type",
   "amount",
@@ -145,12 +146,18 @@
    "label": "Payment Entry",
    "options": "Payment Entry",
    "read_only": 1
+  },
+  {
+   "fieldname": "transaction_password",
+   "fieldtype": "Password",
+   "label": "Transaction Password",
+   "no_copy": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-04-26 16:22:34.594125",
+ "modified": "2021-05-20 15:18:27.870486",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Outward Bank Payment",

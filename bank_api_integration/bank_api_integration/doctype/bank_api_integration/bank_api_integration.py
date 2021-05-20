@@ -8,6 +8,7 @@ from frappe.model.document import Document
 import banking_api
 from banking_api.common_provider import CommonProvider
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
+from frappe.permissions import add_permission, update_permission_property
 
 class BankAPIIntegration(Document):
 	pass
@@ -83,6 +84,7 @@ def create_defaults():
 
 	create_workflow('Outward Bank Payment')
 	create_workflow('Bulk Outward Bank Payment')
+	set_permissions_to_core_doctypes()
 
 def create_workflow(document_name):
 	#Create default workflow
@@ -132,3 +134,13 @@ def create_workflow(document_name):
 				'allowed': 'Bank Checker'})
 
 	workflow_doc.save()
+
+def set_permissions_to_core_doctypes():
+	roles = ['Bank Checker', 'Bank Maker']
+	core_doc_list = ['Bank Account']
+
+	# assign read permission
+	for role in roles:
+		for doc in core_doc_list:
+			add_permission(doc, role, 0)
+			update_permission_property(doc, role, 0, 'read', 1)
