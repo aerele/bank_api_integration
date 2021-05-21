@@ -1,0 +1,21 @@
+<h5 style="margin-top: 0px;">{{ __("Transaction Summary") }}</h5>
+<table class="table table-bordered small">
+	<thead>
+		<tr>
+			<td style="width: 50%">{{ __("Status") }}</td>
+			<td style="width: 50%" class="text-right">{{ __("No of Documents") }}</td>
+		</tr>
+	</thead>
+	<tbody>
+        {% for row in data %}
+		<tr>
+			<td>
+				{{ row["status"] }}
+			</td>
+			<td class="text-right">
+				{{ row["total_docs"] }}
+			</td>
+		</tr>
+        {% endfor %}
+	</tbody>
+</table>
