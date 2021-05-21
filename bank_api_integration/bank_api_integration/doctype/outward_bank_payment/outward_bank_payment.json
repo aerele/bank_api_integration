@@ -130,7 +130,6 @@
    "fieldname": "transaction_type",
    "fieldtype": "Select",
    "label": "Transaction Type",
-   "options": "\nRTG\nRGS\nIFS\nOWN\nTPA\nVAP",
    "reqd": 1
   },
   {
@@ -169,7 +168,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-20 23:51:00.382472",
+ "modified": "2021-05-21 13:47:11.805182",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Outward Bank Payment",

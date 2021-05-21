@@ -92,7 +92,6 @@
    "fieldname": "transaction_type",
    "fieldtype": "Select",
    "label": "Transaction Type",
-   "options": "\nRTG\nRGS\nIFS\nOWN\nTPA\nVAP",
    "reqd": 1
   },
   {
@@ -104,7 +103,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-20 15:10:11.231089",
+ "modified": "2021-05-21 14:53:06.676390",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bulk Outward Bank Payment",

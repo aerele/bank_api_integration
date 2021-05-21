@@ -19,6 +19,19 @@ frappe.ui.form.on('Outward Bank Payment', {
 			 frm.trigger('update_txn_status');
 		 });}
 	},
+	company_bank_account: function(frm) {
+		frappe.call({
+			method: 'bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.get_transaction_type',
+			args: {
+				"bank_account":frm.doc.company_bank_account
+			},
+			callback: function(r) {
+				if (r.message) {
+					frm.set_df_property("transaction_type","options",r.message.join('\n'))
+				}
+			}
+		});
+	},
 	update_txn_status: function(frm){
 		frappe.call({
 			method: "bank_api_integration.bank_api_integration.doctype.outward_bank_payment.outward_bank_payment.update_transaction_status",

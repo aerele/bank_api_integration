@@ -24,6 +24,19 @@ frappe.ui.form.on("Bulk Outward Bank Payment", {
 					 });
 			}
 		},
+		company_bank_account: function(frm) {
+			frappe.call({
+				method: 'bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.get_transaction_type',
+				args: {
+					"bank_account":frm.doc.company_bank_account
+				},
+				callback: function(r) {
+					if (r.message) {
+						frm.set_df_property("transaction_type","options",r.message.join('\n'))
+					}
+				}
+			});
+		},
 		recreate_failed_txn: function(){
 			frappe.model.open_mapped_doc({
 				method: "bank_api_integration.bank_api_integration.doctype.bulk_outward_bank_payment.bulk_outward_bank_payment.fetch_failed_transaction",

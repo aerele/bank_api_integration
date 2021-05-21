@@ -158,3 +158,15 @@ def get_company_bank_account(doctype, txt, searchfield, start, page_len, filters
 				if integration_values[0]['enable_transaction'] and not integration_values[0]['account_number'] in config['disable_transaction']:
 					bank_accounts.append([acc['name']])
 	return bank_accounts
+
+@frappe.whitelist()
+def get_transaction_type(bank_account):
+	common_transaction_types = ['RTGS', 'NEFT', 'IMPS']
+	mappings = {
+		'ICICI': ['Own to Own', 'Own to external payments', 'Virtual A/c payments']
+	}
+	bank_api_provider = frappe.db.get_value('Bank API Integration', {'bank_account': bank_account}, 'bank_api_provider')
+	
+	if not bank_api_provider in mappings:
+		return common_transaction_types
+	return common_transaction_types + mappings[bank_api_provider]
