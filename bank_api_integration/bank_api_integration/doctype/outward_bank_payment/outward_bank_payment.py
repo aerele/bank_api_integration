@@ -72,10 +72,17 @@ class OutwardBankPayment(Document):
 
 	def on_submit(self):
 		if self.workflow_state == 'Approved':
+			integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': self.company_bank_account})
+	
+			password_defined = integration_doc.get_password(fieldname="transaction_password")
+			password_entered = self.get_password(fieldname="transaction_password")
+
+			if not password_defined == password_entered:
+				frappe.throw(_(f'Invalid Password'))
+				return
 			res = None
 			currency = frappe.db.get_value("Company", self.company, "default_currency")
 			prov, config = self.get_api_provider_class()
-			integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': self.company_bank_account})
 			filters = {
 				"UNIQUEID": self.name,
 				"IFSC": frappe.db.get_value('Bank Account', 
@@ -119,7 +126,7 @@ class OutwardBankPayment(Document):
 
 	def get_api_provider_class(self):
 		integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': self.company_bank_account})
-		proxies = frappe.get_site_config().proxies
+		proxies = frappe.get_site_config().bank_api_integration['proxies']
 		config = {"APIKEY": integration_doc.get_password(fieldname="api_key"), 
 				"CORPID": integration_doc.corp_id,
 				"USERID": integration_doc.user_id,
@@ -139,8 +146,8 @@ class OutwardBankPayment(Document):
 			"user": frappe.session.user,
 			"reference_document": self.name,
 			"api_method": api_method,
-			"filters": str(filters) if filters else None,
-			"config_details": str(config),
+			"filters": json.dumps(filters, indent=4) if filters else None,
+			"config_details": json.dumps(config, indent=4),
 			"response": res
 		})
 		request_log.save(ignore_permissions=True)
