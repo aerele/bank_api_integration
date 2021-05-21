@@ -15,7 +15,7 @@ class BankAPIIntegration(Document):
 
 def get_api_provider_class(doc_name):
 	integration_doc = frappe.get_doc('Bank API Integration', doc_name)
-	proxies = frappe.get_site_config().proxies
+	proxies = frappe.get_site_config().bank_api_integration['proxies']
 	config = {"APIKEY": integration_doc.get_password(fieldname="api_key"), 
 			"CORPID": integration_doc.corp_id,
 			"USERID": integration_doc.user_id,
@@ -144,3 +144,17 @@ def set_permissions_to_core_doctypes():
 		for doc in core_doc_list:
 			add_permission(doc, role, 0)
 			update_permission_property(doc, role, 0, 'read', 1)
+
+@frappe.whitelist()
+def get_company_bank_account(doctype, txt, searchfield, start, page_len, filters):
+	bank_accounts = []
+	config = frappe.get_site_config().bank_api_integration
+	for acc in frappe.get_list("Bank Account", filters= filters,fields=["name"]):
+		if not acc['name'] in bank_accounts:
+			integration_values = frappe.db.get_values('Bank API Integration', 
+				filters={'bank_account': acc['name']}, 
+				fieldname=["enable_transaction", "account_number"], as_dict=True)
+			if integration_values:
+				if integration_values[0]['enable_transaction'] and not integration_values[0]['account_number'] in config['disable_transaction']:
+					bank_accounts.append([acc['name']])
+	return bank_accounts
