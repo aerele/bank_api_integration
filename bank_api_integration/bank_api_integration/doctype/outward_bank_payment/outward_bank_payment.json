@@ -20,6 +20,8 @@
   "section_break_11",
   "bobp",
   "payment_entry",
+  "column_break_15",
+  "utr_number",
   "status",
   "reconcile_section",
   "get_outstanding_invoice",
@@ -152,12 +154,22 @@
    "fieldtype": "Password",
    "label": "Transaction Password",
    "no_copy": 1
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "utr_number",
+   "fieldtype": "Data",
+   "label": "UTR Number",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-20 15:18:27.870486",
+ "modified": "2021-05-20 23:51:00.382472",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Outward Bank Payment",
