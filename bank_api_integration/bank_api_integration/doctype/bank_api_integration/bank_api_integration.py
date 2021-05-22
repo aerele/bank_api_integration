@@ -154,15 +154,13 @@ def set_permissions_to_core_doctypes():
 @frappe.whitelist()
 def get_company_bank_account(doctype, txt, searchfield, start, page_len, filters):
 	bank_accounts = []
-	config = frappe.get_site_config().bank_api_integration
 	for acc in frappe.get_list("Bank Account", filters= filters,fields=["name"]):
 		if not acc['name'] in bank_accounts:
-			integration_values = frappe.db.get_values('Bank API Integration', 
-				filters={'bank_account': acc['name']}, 
-				fieldname=["enable_transaction", "account_number"], as_dict=True)
-			if integration_values:
-				if integration_values[0]['enable_transaction'] and not integration_values[0]['account_number'] in config['disable_transaction']:
-					bank_accounts.append([acc['name']])
+			is_enabled = frappe.db.get_value('Bank API Integration', 
+				{'bank_account': acc['name']}, 
+				'enable_transaction')
+			if is_enabled:
+				bank_accounts.append([acc['name']])
 	return bank_accounts
 
 @frappe.whitelist()

@@ -152,6 +152,7 @@
   {
    "fieldname": "transaction_password",
    "fieldtype": "Password",
+   "hidden": 1,
    "label": "Transaction Password",
    "no_copy": 1
   },
@@ -170,7 +171,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-22 09:27:54.413581",
+ "modified": "2021-05-22 13:14:10.414318",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Outward Bank Payment",

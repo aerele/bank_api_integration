@@ -2,17 +2,6 @@
 // For license information, please see license.txt
 {% include 'bank_api_integration/bank_api_integration/utils/common_fields.js' %};
 frappe.ui.form.on('Outward Bank Payment', {
-	onload: function(frm){
-		if(frappe.user.has_role("Bank Checker")){ 
-			frm.set_df_property('transaction_password', 'hidden', 0);
-			frm.toggle_reqd("transaction_password", true);
-		} 
-		else{
-			frm.set_df_property('transaction_password', 'hidden', 1);
-			frm.toggle_reqd("transaction_password", false);
-		}
-		frm.refresh_fields("transaction_password");
-	},
 	refresh: function(frm) {
 		if (frm.doc.docstatus == 1 && frm.doc.status == 'Initiated'){ 
 			frm.add_custom_button(__("Update Transaction Status"), function() {
@@ -31,6 +20,16 @@ frappe.ui.form.on('Outward Bank Payment', {
 				}
 			}
 		});
+		frappe.db.get_value("Bank API Integration", {"bank_account": frm.doc.company_bank_account}, "enable_password_security", 
+			(r) => {
+				if(r.enable_password_security == 1){
+					if(frappe.user.has_role("Bank Checker")){ 
+						frm.set_df_property('transaction_password', 'hidden', 0);
+						frm.toggle_reqd("transaction_password", true);
+						frm.refresh_fields("transaction_password");
+					} 
+				}
+			})
 	},
 	update_txn_status: function(frm){
 		frappe.call({

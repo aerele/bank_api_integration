@@ -26,6 +26,7 @@
   "transaction_details_section",
   "enable_transaction",
   "column_break_20",
+  "enable_password_security",
   "transaction_password"
  ],
  "fields": [
@@ -135,11 +136,11 @@
    "mandatory_depends_on": "eval:in_list([\"ICICI\"], doc.bank_api_provider)"
   },
   {
-   "depends_on": "enable_transaction",
+   "depends_on": "enable_password_security",
    "fieldname": "transaction_password",
    "fieldtype": "Password",
    "label": "Transaction Password",
-   "mandatory_depends_on": "enable_transaction",
+   "mandatory_depends_on": "enable_password_security",
    "no_copy": 1
   },
   {
@@ -162,11 +163,17 @@
   {
    "fieldname": "column_break_20",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_password_security",
+   "fieldtype": "Check",
+   "label": "Enable Password Security"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-05-20 14:44:54.249096",
+ "modified": "2021-05-22 13:04:19.285746",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bank API Integration",
