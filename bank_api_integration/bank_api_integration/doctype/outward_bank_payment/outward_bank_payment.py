@@ -10,13 +10,18 @@ import banking_api
 from banking_api.common_provider import CommonProvider
 from frappe.utils import today
 from six import string_types
-from frappe.utils import get_site_path
+from frappe.utils import get_link_to_form
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_negative_outstanding_invoices, get_orders_to_be_billed
 from erpnext.controllers.accounts_controller import get_supplier_block_status
 from erpnext.accounts.utils import get_outstanding_invoices, get_account_currency
 from frappe.utils import add_months, nowdate
 class OutwardBankPayment(Document):
 	def on_change(self):
+		frappe.db.set_value('Outward Bank Payment Details',{'parent':self.bobp,
+						'party_type': self.party_type,
+						'party': self.party,
+						'amount': self.amount,
+						'outward_bank_payment':self.name},'status', self.status)
 		if self.reconcile_action == 'Auto Reconcile Oldest First Invoice' and self.status == 'Transaction Completed':
 			references = []
 			amount = self.amount
@@ -103,16 +108,20 @@ class OutwardBankPayment(Document):
 			}
 			try:
 				res = prov.initiate_transaction_without_otp(filters)
-				if type(res) == str:
+				if res['status'] == 'SUCCESS' and 'utr_number' in res:
+					frappe.db.set_value('Outward Bank Payment',{'name':self.name},'utr_number',res['utr_number'])
+					self.reload()
+					self.status = 'Initiated'
+					self.workflow_state = 'Initiated'
+				elif res['status'] in ['FAILURE', 'DUPLICATE']:
+					self.status = 'Initiation Failed'
+					self.workflow_state = 'Initiation Failed'
+				elif 'PENDING' in res['STATUS']:
+					self.status = 'Initiation Pending'
+					self.workflow_state = 'Initiation Pending'
+				else:
 					self.status = 'Initiation Error'
 					self.workflow_state = 'Initiation Error'
-				else:
-					if res['STATUS'] == 'SUCCESS':
-						self.status = 'Initiated'
-						self.workflow_state = 'Initiated'
-					if res['STATUS'] == 'FAILURE':
-						self.status = 'Initiation Failed'
-						self.workflow_state = 'Initiation Failed'
 			except:
 				self.status = 'Initiation Error'
 				self.workflow_state = 'Initiation Error'
@@ -122,7 +131,7 @@ class OutwardBankPayment(Document):
 			self.reload()
 			if self.status in ['Initiation Error', 'Initiation Failed']:
 				if not self.bobp:
-					frappe.throw(_(f'Kindly check request log for more info {log_name}'))
+					frappe.throw(_(f'An error occurred while making request. Kindly check request log for more info {get_link_to_form("Bank API Request Log", log_name)}'))
 
 	def get_api_provider_class(self):
 		integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': self.company_bank_account})
@@ -148,7 +157,7 @@ class OutwardBankPayment(Document):
 			"api_method": api_method,
 			"filters": json.dumps(filters, indent=4) if filters else None,
 			"config_details": json.dumps(config, indent=4),
-			"response": res
+			"response": json.dumps(res, indent=4)
 		})
 		request_log.save(ignore_permissions=True)
 		frappe.db.commit()
@@ -156,33 +165,36 @@ class OutwardBankPayment(Document):
 
 @frappe.whitelist()
 def update_transaction_status(obp_name=None,bobp_name=None):
+	bulk_update = True
+	if obp_name or bobp_name:
+		bulk_update = False
 	if obp_name:
-		obp_list = {'name': obp_name}
+		obp_list = [{'name': obp_name}]
 	if bobp_name:
 		obp_list = frappe.db.get_all('Outward Bank Payment', {'status': ['=', 'Initiated'], 'bobp': ['=', bobp_name]})
+	if bulk_update:
+		obp_list = frappe.db.get_all('Outward Bank Payment', {'status': ['=', 'Initiated']})
 
+	failed_obp_list = []
 	for doc in obp_list:
 		res = None
 		obp_doc = frappe.get_doc('Outward Bank Payment', doc['name'])
-		currency = frappe.db.get_value("Company", obp_doc.company, "default_currency")
 		prov, config = obp_doc.get_api_provider_class()
-		integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': obp_doc.company_bank_account})
 		filters = {"UNIQUEID": obp_doc.name}
 		try:
 			res = prov.get_transaction_status(filters)
-			if type(res) == str:
+			if res['status'] == 'SUCCESS' and 'utr_number' in res:
+				obp_doc.status = 'Transaction Completed'
+				obp_doc.workflow_state = 'Transaction Completed'
+			elif res['status'] in ['FAILURE', 'DUPLICATE']:
+				obp_doc.status = 'Transaction Failed'
+				obp_doc.workflow_state = 'Transaction Failed'
+			elif 'PENDING' in res['STATUS']:
+				obp_doc.status = 'Transaction Pending'
+				obp_doc.workflow_state = 'Transaction Pending'
+			else:
 				obp_doc.status = 'Transaction Error'
 				obp_doc.workflow_state = 'Transaction Error'
-			else:
-				if res['STATUS'] == 'SUCCESS':
-					obp_doc.status = 'Transaction Completed'
-					obp_doc.workflow_state = 'Transaction Completed'
-				if res['STATUS'] in ['FAILURE', 'DUPLICATE']:
-					obp_doc.status = 'Transaction Failed'
-					obp_doc.workflow_state = 'Transaction Failed'
-				if res['STATUS'] in ['PENDING', 'Pending For Processing']:
-					obp_doc.status = 'Transaction Pending'
-					obp_doc.workflow_state = 'Transaction Pending'
 		except:
 			obp_doc.status = 'Transaction Error'
 			obp_doc.workflow_state = 'Transaction Error'
@@ -191,9 +203,16 @@ def update_transaction_status(obp_name=None,bobp_name=None):
 		log_name = obp_doc.log_request('Update Transaction Status', filters, config, res)
 		obp_doc.save()
 		obp_doc.reload()
-		if obp_doc.status in ['Transaction Pending', 'Transaction Error', 'Transaction Failed']:
+		if obp_doc.status in ['Transaction Pending', 'Transaction Error', 'Transaction Failed'] and not bulk_update:
 			if not obp_doc.bobp:
-				frappe.throw(_(f'Kindly check request log for more info {log_name}'))
+				frappe.throw(_(f'An error occurred while making request. Kindly check request log for more info {get_link_to_form("Bank API Request Log", log_name)}'))
+			else:
+				failed_obp_list.append(get_link_to_form("Outward Bank Payment", doc['name']))
+	if failed_obp_list and not bulk_update:
+		failed_obp = ','.join(failed_obp_list)
+		frappe.throw(_(f"Transaction status update failed for the below obp(s) {failed_obp}"))
+	if bobp_name and not bulk_update:
+		frappe.msgprint(_("Transaction Status Updated"))
 
 @frappe.whitelist()
 def get_outstanding_reference_documents(args):
