@@ -71,9 +71,9 @@ def create_defaults():
 			'workflow_action_name': 'Invoke'}).save()
 
 	#Create workflow state
-	states_with_style = {'Success': ['Initiated', 'Transaction Completed'],
-	'Danger': ['Initiation Error', 'Initiation Failed', 'Transaction Failed', 'Transaction Error'],
-	'Primary': ['Transaction Pending', 'Initiation Pending']}
+	states_with_style = {'Success': ['Initiated', 'Transaction Completed', 'Completed'],
+	'Danger': ['Initiation Error', 'Initiation Failed', 'Transaction Failed', 'Transaction Error', 'Failed'],
+	'Primary': ['Transaction Pending', 'Initiation Pending', 'Processing']}
 
 	for style in states_with_style.keys():
 		for state in states_with_style[style]:
@@ -95,7 +95,7 @@ def create_workflow(document_name):
 			'is_active': 1})
 
 	bank_checker_allowed_state = ['Approved', 'Rejected']
-	
+	bobp_bank_checker_allowed_state = ['Processing', 'Completed', 'Failed']
 	if document_name == 'Outward Bank Payment':
 		bank_checker_allowed_state += ['Initiated',
 				'Initiation Error', 'Initiation Failed', 'Transaction Failed', 'Initiation Pending',
@@ -129,6 +129,12 @@ def create_workflow(document_name):
 				'allowed': 'Bank Checker'})
 		for state in initiated_next_states['Invoke']:
 			workflow_doc.append('transitions',{'state': 'Initiated',
+				'action': 'Invoke',
+				'next_state': state,
+				'allowed': 'Bank Checker'})
+	if document_name == 'Bulk Outward Bank Payment':
+		for state in bobp_bank_checker_allowed_state:
+			workflow_doc.append('transitions',{'state': 'Approved',
 				'action': 'Invoke',
 				'next_state': state,
 				'allowed': 'Bank Checker'})
