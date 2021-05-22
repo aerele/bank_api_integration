@@ -73,7 +73,7 @@ def create_defaults():
 	#Create workflow state
 	states_with_style = {'Success': ['Initiated', 'Transaction Completed'],
 	'Danger': ['Initiation Error', 'Initiation Failed', 'Transaction Failed', 'Transaction Error'],
-	'Primary': ['Transaction Pending']}
+	'Primary': ['Transaction Pending', 'Initiation Pending']}
 
 	for style in states_with_style.keys():
 		for state in states_with_style[style]:
@@ -98,7 +98,7 @@ def create_workflow(document_name):
 	
 	if document_name == 'Outward Bank Payment':
 		bank_checker_allowed_state += ['Initiated',
-				'Initiation Error', 'Initiation Failed', 'Transaction Failed',
+				'Initiation Error', 'Initiation Failed', 'Transaction Failed', 'Initiation Pending',
 				'Transaction Error', 'Transaction Pending', 'Transaction Completed']
 	workflow_doc.append('states',{'state': 'Pending',
 				'doc_status': 0,
@@ -114,7 +114,7 @@ def create_workflow(document_name):
 					'allow_edit': 'Bank Checker'})
 
 	pending_next_states = [['Approve', 'Approved'], ['Reject', 'Rejected']]
-	approved_next_states = {'Invoke': ['Initiated', 'Initiation Error', 'Initiation Failed']}
+	approved_next_states = {'Invoke': ['Initiated', 'Initiation Error', 'Initiation Failed', 'Initiation Pending']}
 	initiated_next_states = {'Invoke': ['Transaction Error', 'Transaction Failed', 'Transaction Pending', 'Transaction Completed']}
 	for state in pending_next_states:
 		workflow_doc.append('transitions',{'state': 'Pending',
@@ -163,7 +163,7 @@ def get_company_bank_account(doctype, txt, searchfield, start, page_len, filters
 def get_transaction_type(bank_account):
 	common_transaction_types = ['RTGS', 'NEFT', 'IMPS']
 	mappings = {
-		'ICICI': ['Own to Own', 'Own to external payments', 'Virtual A/c payments']
+		'ICICI': ['Internal Payments', 'External Payments', 'Virtual A/c Payments']
 	}
 	bank_api_provider = frappe.db.get_value('Bank API Integration', {'bank_account': bank_account}, 'bank_api_provider')
 	
