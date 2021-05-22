@@ -78,13 +78,19 @@ class OutwardBankPayment(Document):
 	def on_submit(self):
 		if self.workflow_state == 'Approved':
 			integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': self.company_bank_account})
-	
-			password_defined = integration_doc.get_password(fieldname="transaction_password")
-			password_entered = self.get_password(fieldname="transaction_password")
+			disabled_accounts = frappe.get_site_config().bank_api_integration['disable_transaction']
 
-			if not password_defined == password_entered:
-				frappe.throw(_(f'Invalid Password'))
+			if disabled_accounts == '*' or integration_doc.account_number in disabled_accounts:
+				frappe.throw(_(f'Unable to process transaction for the selected bank account. Please contact Administrator.'))
 				return
+	
+			if integration_doc.enable_password_security:
+				password_defined = integration_doc.get_password(fieldname="transaction_password")
+				password_entered = self.get_password(fieldname="transaction_password")
+
+				if not password_defined == password_entered:
+					frappe.throw(_(f'Invalid Password'))
+					return
 			res = None
 			currency = frappe.db.get_value("Company", self.company, "default_currency")
 			prov, config = self.get_api_provider_class()

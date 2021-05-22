@@ -36,14 +36,21 @@ class BulkOutwardBankPayment(Document):
 	def on_submit(self):
 		if self.workflow_state == 'Approved':
 			failed_obp_list = []
+			password_entered = None
 			integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': self.company_bank_account})
-
-			password_defined = integration_doc.get_password(fieldname="transaction_password")
-			password_entered = self.get_password(fieldname="transaction_password")
-
-			if not password_defined == password_entered:
-				frappe.throw(_(f'Invalid Password'))
+			disabled_accounts = frappe.get_site_config().bank_api_integration['disable_transaction']
+			
+			if disabled_accounts == '*' or integration_doc.account_number in disabled_accounts:
+				frappe.throw(_(f'Unable to process transaction for the selected bank account. Please contact Administrator.'))
 				return
+
+			if integration_doc.enable_password_security:
+				password_defined = integration_doc.get_password(fieldname="transaction_password")
+				password_entered = self.get_password(fieldname="transaction_password")
+
+				if not password_defined == password_entered:
+					frappe.throw(_(f'Invalid Password'))
+					return
 			for row in self.outward_bank_payment_details:
 				data = {
 				'party_type': row.party_type,
