@@ -66,6 +66,7 @@
    "fieldname": "bobp",
    "fieldtype": "Link",
    "label": "Bulk Outward Bank Payment",
+   "no_copy": 1,
    "options": "Bulk Outward Bank Payment",
    "read_only": 1
   },
@@ -162,13 +163,14 @@
    "fieldname": "utr_number",
    "fieldtype": "Data",
    "label": "UTR Number",
+   "no_copy": 1,
    "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-21 13:47:11.805182",
+ "modified": "2021-05-22 09:27:54.413581",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Outward Bank Payment",

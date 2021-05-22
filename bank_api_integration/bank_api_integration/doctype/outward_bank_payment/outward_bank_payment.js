@@ -36,7 +36,11 @@ frappe.ui.form.on('Outward Bank Payment', {
 		frappe.call({
 			method: "bank_api_integration.bank_api_integration.doctype.outward_bank_payment.outward_bank_payment.update_transaction_status",
 			freeze: true,
-            args: {obp_name:frm.doc.name}
+			freeze_message: __("Proceessing..."),
+			args: {obp_name:frm.doc.name},
+			callback: function(r) {
+				frm.reload_doc();
+			}
 		})
 	},
 	after_workflow_action: (frm) => {

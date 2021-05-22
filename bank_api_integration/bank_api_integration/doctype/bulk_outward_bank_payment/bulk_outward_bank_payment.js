@@ -39,7 +39,7 @@ frappe.ui.form.on("Bulk Outward Bank Payment", {
 		},
 		recreate_failed_txn: function(){
 			frappe.model.open_mapped_doc({
-				method: "bank_api_integration.bank_api_integration.doctype.bulk_outward_bank_payment.bulk_outward_bank_payment.fetch_failed_transaction",
+				method: "bank_api_integration.bank_api_integration.doctype.bulk_outward_bank_payment.bulk_outward_bank_payment.recreate_failed_transaction",
 				frm: cur_frm,
 				freeze_message: __("Fetching ...")
 			})
@@ -48,6 +48,7 @@ frappe.ui.form.on("Bulk Outward Bank Payment", {
 			frappe.call({
 				method: "bank_api_integration.bank_api_integration.doctype.outward_bank_payment.outward_bank_payment.update_transaction_status",
 				freeze: true,
+				freeze_message: __("Proceessing..."),
 				args: {bobp_name:frm.doc.name}
 			})
 		},

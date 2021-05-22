@@ -82,7 +82,7 @@ class BulkOutwardBankPayment(Document):
 
 
 @frappe.whitelist()
-def fetch_failed_transaction(source_name, target_doc=None):
+def recreate_failed_transaction(source_name, target_doc=None):
 	doc = get_mapped_doc("Bulk Outward Bank Payment", source_name,	{
 		"Bulk Outward Bank Payment": {
 			"doctype": "Bulk Outward Bank Payment",

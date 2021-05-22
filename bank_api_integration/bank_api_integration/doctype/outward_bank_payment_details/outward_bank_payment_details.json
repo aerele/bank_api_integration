@@ -35,13 +35,17 @@
   {
    "fieldname": "status",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Status",
+   "no_copy": 1,
    "read_only": 1
   },
   {
    "fieldname": "outward_bank_payment",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Outward Bank Payment",
+   "no_copy": 1,
    "options": "Outward Bank Payment",
    "read_only": 1
   }
@@ -49,7 +53,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2021-03-17 08:06:11.057889",
+ "modified": "2021-05-22 10:31:41.369426",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Outward Bank Payment Details",

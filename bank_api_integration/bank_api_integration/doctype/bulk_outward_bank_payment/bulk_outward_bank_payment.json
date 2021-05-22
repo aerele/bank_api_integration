@@ -58,6 +58,7 @@
    "fieldname": "no_of_payments",
    "fieldtype": "Int",
    "label": "No of Payments",
+   "no_copy": 1,
    "read_only": 1
   },
   {
@@ -71,6 +72,7 @@
    "fieldname": "total_payment_amount",
    "fieldtype": "Currency",
    "label": "Total Payment Amount",
+   "no_copy": 1,
    "read_only": 1
   },
   {
@@ -103,7 +105,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-21 14:53:06.676390",
+ "modified": "2021-05-22 10:05:14.591932",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bulk Outward Bank Payment",
