@@ -17,12 +17,27 @@ from erpnext.accounts.utils import get_outstanding_invoices, get_account_currenc
 from frappe.utils import add_months, nowdate
 class OutwardBankPayment(Document):
 	def on_change(self):
-		frappe.db.set_value('Outward Bank Payment Details',{'parent':self.bobp,
-						'party_type': self.party_type,
-						'party': self.party,
-						'amount': self.amount,
-						'outward_bank_payment':self.name},'status', self.status)
-		if self.reconcile_action == 'Auto Reconcile Oldest First Invoice' and self.status == 'Transaction Completed':
+		if self.bobp and not self.workflow_state == 'Pending':
+			status = 'Processing'
+			failed_doc_count = frappe.db.count('Outward Bank Payment', {'bobp': self.bobp, 'workflow_state': ['in',  ['Initiation Failed','Initiation Error', 'Transaction Error', 'Transaction Failed']]})
+			completed_doc_count = frappe.db.count('Outward Bank Payment', {'bobp': self.bobp, 'workflow_state': 'Transaction Completed'})
+			initiated_doc_count = frappe.db.count('Outward Bank Payment', {'bobp': self.bobp, 'workflow_state': 'Initiated'})
+			total_payments = frappe.db.get_value('Bulk Outward Bank Payment', {'name': self.bobp}, 'no_of_payments')
+			if initiated_doc_count == total_payments:
+				status = 'Initiated'
+			if failed_doc_count and not completed_doc_count:
+				status = 'Failed'
+			if completed_doc_count>=1:
+				status = 'Partially Completed'
+			if completed_doc_count == total_payments:
+				status = 'Completed'	
+			frappe.db.set_value('Bulk Outward Bank Payment', {'name': self.bobp}, 'workflow_state', status)
+			frappe.db.set_value('Outward Bank Payment Details',{'parent':self.bobp,
+							'party_type': self.party_type,
+							'party': self.party,
+							'amount': self.amount,
+							'outward_bank_payment': get_link_to_form('Outward Bank Payment', self.name)},'status', self.workflow_state)
+		if self.reconcile_action == 'Auto Reconcile Oldest First Invoice' and self.workflow_state == 'Transaction Completed':
 			references = []
 			amount = self.amount
 			month_threshold = -6
@@ -39,7 +54,7 @@ class OutwardBankPayment(Document):
 					})
 					amount-= inv['grand_total']
 			self.create_payment_entry(references)
-		if self.reconcile_action == 'Manual Reconcile' and self.status == 'Transaction Completed':
+		if self.reconcile_action == 'Manual Reconcile' and self.workflow_state == 'Transaction Completed':
 			references = []
 			for row in self.payment_references:
 				references.append({
@@ -77,6 +92,7 @@ class OutwardBankPayment(Document):
 
 	def on_submit(self):
 		if self.workflow_state == 'Approved':
+			workflow_state = None
 			integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': self.company_bank_account})
 			disabled_accounts = frappe.get_site_config().bank_api_integration['disable_transaction']
 
@@ -95,6 +111,7 @@ class OutwardBankPayment(Document):
 			currency = frappe.db.get_value("Company", self.company, "default_currency")
 			prov, config = self.get_api_provider_class()
 			filters = {
+				"WORKFLOW_REQD": "N",
 				"UNIQUEID": self.name,
 				"IFSC": frappe.db.get_value('Bank Account', 
 						{'party_type': self.party_type,
@@ -117,25 +134,22 @@ class OutwardBankPayment(Document):
 				if res['status'] == 'SUCCESS' and 'utr_number' in res:
 					frappe.db.set_value('Outward Bank Payment',{'name':self.name},'utr_number',res['utr_number'])
 					self.reload()
-					self.status = 'Initiated'
-					self.workflow_state = 'Initiated'
+					workflow_state = 'Initiated'
 				elif res['status'] in ['FAILURE', 'DUPLICATE']:
-					self.status = 'Initiation Failed'
-					self.workflow_state = 'Initiation Failed'
-				elif 'PENDING' in res['STATUS']:
-					self.status = 'Initiation Pending'
-					self.workflow_state = 'Initiation Pending'
+					workflow_state = 'Initiation Failed'
+				elif 'PENDING' in res['status']:
+					workflow_state = 'Initiation Pending'
 				else:
-					self.status = 'Initiation Error'
-					self.workflow_state = 'Initiation Error'
+					workflow_state = 'Initiation Error'
 			except:
-				self.status = 'Initiation Error'
-				self.workflow_state = 'Initiation Error'
+				workflow_state = 'Initiation Error'
 				res = frappe.get_traceback()
 			log_name = self.log_request('Initiate Transaction without OTP', filters, config, res)
-			self.save()
+			self.save(ignore_permissions=True)
 			self.reload()
-			if self.status in ['Initiation Error', 'Initiation Failed']:
+			if workflow_state:
+				frappe.db.set_value('Outward Bank Payment', {'name': self.name}, 'workflow_state', workflow_state)
+			if workflow_state in ['Initiation Error', 'Initiation Failed']:
 				if not self.bobp:
 					frappe.throw(_(f'An error occurred while making request. Kindly check request log for more info {get_link_to_form("Bank API Request Log", log_name)}'))
 
@@ -177,39 +191,38 @@ def update_transaction_status(obp_name=None,bobp_name=None):
 	if obp_name:
 		obp_list = [{'name': obp_name}]
 	if bobp_name:
-		obp_list = frappe.db.get_all('Outward Bank Payment', {'status': ['=', 'Initiated'], 'bobp': ['=', bobp_name]})
+		obp_list = frappe.db.get_all('Outward Bank Payment', {'workflow_state': ['=', 'Initiated'], 'bobp': ['=', bobp_name]})
 	if bulk_update:
-		obp_list = frappe.db.get_all('Outward Bank Payment', {'status': ['=', 'Initiated']})
+		obp_list = frappe.db.get_all('Outward Bank Payment', {'workflow_state': ['=', 'Initiated']})
 
 	failed_obp_list = []
+	if not obp_list:
+		frappe.throw(_("No transaction found in the initiated state."))
 	for doc in obp_list:
 		res = None
+		workflow_state = None
 		obp_doc = frappe.get_doc('Outward Bank Payment', doc['name'])
 		prov, config = obp_doc.get_api_provider_class()
 		filters = {"UNIQUEID": obp_doc.name}
 		try:
 			res = prov.get_transaction_status(filters)
 			if res['status'] == 'SUCCESS' and 'utr_number' in res:
-				obp_doc.status = 'Transaction Completed'
-				obp_doc.workflow_state = 'Transaction Completed'
+				workflow_state = 'Transaction Completed'
 			elif res['status'] in ['FAILURE', 'DUPLICATE']:
-				obp_doc.status = 'Transaction Failed'
-				obp_doc.workflow_state = 'Transaction Failed'
-			elif 'PENDING' in res['STATUS']:
-				obp_doc.status = 'Transaction Pending'
-				obp_doc.workflow_state = 'Transaction Pending'
+				workflow_state = 'Transaction Failed'
+			elif 'PENDING' in res['status']:
+				workflow_state = 'Transaction Pending'
 			else:
-				obp_doc.status = 'Transaction Error'
-				obp_doc.workflow_state = 'Transaction Error'
+				workflow_state = 'Transaction Error'
 		except:
-			obp_doc.status = 'Transaction Error'
-			obp_doc.workflow_state = 'Transaction Error'
+			workflow_state = 'Transaction Error'
 			res = frappe.get_traceback()
 		
 		log_name = obp_doc.log_request('Update Transaction Status', filters, config, res)
-		obp_doc.save()
+		obp_doc.save(ignore_permissions=True)
 		obp_doc.reload()
-		if obp_doc.status in ['Transaction Pending', 'Transaction Error', 'Transaction Failed'] and not bulk_update:
+		frappe.db.set_value('Outward Bank Payment', {'name': obp_doc.name}, 'workflow_state', workflow_state)
+		if workflow_state in ['Transaction Pending', 'Transaction Error', 'Transaction Failed'] and not bulk_update:
 			if not obp_doc.bobp:
 				frappe.throw(_(f'An error occurred while making request. Kindly check request log for more info {get_link_to_form("Bank API Request Log", log_name)}'))
 			else:
