@@ -4,13 +4,17 @@
 frappe.ui.form.on("Bulk Outward Bank Payment", {
 		refresh: function(frm) {
 			frm.trigger("show_summary");
-			if (frm.doc.docstatus == 1 && frm.doc.status != 'Rejected'){ 
+			if (frm.doc.docstatus == 1 && frm.doc.status != 'Rejected'){
+				if(frm.doc.__onload.initiated_txn_count ){
 				frm.add_custom_button(__("Update Transaction Status"), function() {
 				 frm.trigger('update_txn_status');
 			 	});
+				}
+				if(frm.doc.__onload.failed_doc_count){
 				frm.add_custom_button(__("Recreate Failed Transactions"), function() {
 					frm.trigger('recreate_failed_txn');
 					 });
+					}
 			}
 		},
 		company_bank_account: function(frm) {
@@ -25,16 +29,6 @@ frappe.ui.form.on("Bulk Outward Bank Payment", {
 					}
 				}
 			});
-			frappe.db.get_value("Bank API Integration", {"bank_account": frm.doc.company_bank_account}, "enable_password_security", 
-			(r) => {
-				if(r.enable_password_security == 1){
-					if(frappe.user.has_role("Bank Checker")){ 
-						frm.set_df_property('transaction_password', 'hidden', 0);
-						frm.toggle_reqd("transaction_password", true);
-						frm.refresh_fields("transaction_password");
-					} 
-				}
-			})
 		},
 		recreate_failed_txn: function(){
 			frappe.model.open_mapped_doc({
@@ -47,7 +41,7 @@ frappe.ui.form.on("Bulk Outward Bank Payment", {
 			frappe.call({
 				method: "bank_api_integration.bank_api_integration.doctype.outward_bank_payment.outward_bank_payment.update_transaction_status",
 				freeze: true,
-				freeze_message: __("Proceessing..."),
+				freeze_message: __("Processing..."),
 				args: {bobp_name:frm.doc.name}
 			})
 		},

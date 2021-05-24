@@ -20,22 +20,12 @@ frappe.ui.form.on('Outward Bank Payment', {
 				}
 			}
 		});
-		frappe.db.get_value("Bank API Integration", {"bank_account": frm.doc.company_bank_account}, "enable_password_security", 
-			(r) => {
-				if(r.enable_password_security == 1){
-					if(frappe.user.has_role("Bank Checker")){ 
-						frm.set_df_property('transaction_password', 'hidden', 0);
-						frm.toggle_reqd("transaction_password", true);
-						frm.refresh_fields("transaction_password");
-					} 
-				}
-			})
 	},
 	update_txn_status: function(frm){
 		frappe.call({
 			method: "bank_api_integration.bank_api_integration.doctype.outward_bank_payment.outward_bank_payment.update_transaction_status",
 			freeze: true,
-			freeze_message: __("Proceessing..."),
+			freeze_message: __("Processing..."),
 			args: {obp_name:frm.doc.name},
 			callback: function(r) {
 				frm.reload_doc();
