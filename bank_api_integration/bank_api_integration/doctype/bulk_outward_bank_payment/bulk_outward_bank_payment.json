@@ -1,18 +1,17 @@
 {
  "actions": [],
+ "allow_copy": 1,
  "autoname": "format:BOBP{YYYY}{MM}{####}",
  "creation": "2021-03-11 15:59:34.364295",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "status",
   "company",
   "reconcile_action",
   "column_break_7",
   "company_bank_account",
   "transaction_type",
-  "transaction_password",
   "section_break_4",
   "outward_bank_payment_details",
   "no_of_payments",
@@ -20,14 +19,6 @@
   "amended_from"
  ],
  "fields": [
-  {
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "hidden": 1,
-   "label": "Status",
-   "options": "\nPending\nApproved\nRejected",
-   "read_only": 1
-  },
   {
    "allow_bulk_edit": 1,
    "fieldname": "outward_bank_payment_details",
@@ -95,23 +86,29 @@
    "fieldtype": "Select",
    "label": "Transaction Type",
    "reqd": 1
-  },
-  {
-   "fieldname": "transaction_password",
-   "fieldtype": "Password",
-   "hidden": 1,
-   "label": "Transaction Password",
-   "no_copy": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-22 13:16:31.253321",
+ "modified": "2021-05-24 23:16:12.652914",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bulk Outward Bank Payment",
  "owner": "Administrator",
  "permissions": [
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bank Checker",
+   "select": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
   {
    "create": 1,
    "delete": 1,
@@ -120,7 +117,8 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "System Manager",
+   "role": "Bank Maker",
+   "select": 1,
    "share": 1,
    "write": 1
   }

@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_copy": 1,
  "autoname": "format:OBP{YYYY}{MM}{####}",
  "creation": "2021-03-11 13:09:41.879350",
  "doctype": "DocType",
@@ -11,7 +12,6 @@
   "column_break_3",
   "company_bank_account",
   "transaction_type",
-  "transaction_password",
   "section_break_4",
   "party_type",
   "amount",
@@ -22,7 +22,6 @@
   "payment_entry",
   "column_break_15",
   "utr_number",
-  "status",
   "reconcile_section",
   "get_outstanding_invoice",
   "payment_references",
@@ -51,16 +50,6 @@
    "in_list_view": 1,
    "label": "Amount",
    "reqd": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "hidden": 1,
-   "in_list_view": 1,
-   "label": "Status",
-   "no_copy": 1,
-   "options": "\nPending\nApproved\nRejected\nInitiation Error\nInitiation Failed\nInitiated\nTransaction Error\nTransaction Pending\nTransaction Failed\nTransaction Completed"
   },
   {
    "fieldname": "bobp",
@@ -150,13 +139,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "transaction_password",
-   "fieldtype": "Password",
-   "hidden": 1,
-   "label": "Transaction Password",
-   "no_copy": 1
-  },
-  {
    "fieldname": "column_break_15",
    "fieldtype": "Column Break"
   },
@@ -171,12 +153,25 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-22 13:14:10.414318",
+ "modified": "2021-05-24 23:15:59.583447",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Outward Bank Payment",
  "owner": "Administrator",
  "permissions": [
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bank Checker",
+   "select": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
   {
    "create": 1,
    "delete": 1,
@@ -185,7 +180,8 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "System Manager",
+   "role": "Bank Maker",
+   "select": 1,
    "share": 1,
    "write": 1
   }
