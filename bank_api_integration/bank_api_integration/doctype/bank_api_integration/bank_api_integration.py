@@ -67,13 +67,14 @@ def create_defaults():
 		custom_fields, ignore_validate=frappe.flags.in_patch, update=True)
 
 	#Create workflow action master
-	frappe.get_doc({'doctype': 'Workflow Action Master',
-			'workflow_action_name': 'Invoke'}).save()
+	if not frappe.db.exists('Workflow Action Master', 'Invoke'):
+		frappe.get_doc({'doctype': 'Workflow Action Master',
+				'workflow_action_name': 'Invoke'}).save()
 
 	#Create workflow state
 	states_with_style = {'Success': ['Initiated', 'Transaction Completed', 'Completed'],
 	'Danger': ['Initiation Error', 'Initiation Failed', 'Transaction Failed', 'Transaction Error', 'Failed'],
-	'Primary': ['Transaction Pending', 'Initiation Pending', 'Processing']}
+	'Primary': ['Transaction Pending', 'Initiation Pending', 'Processing', 'Partially Completed']}
 
 	for style in states_with_style.keys():
 		for state in states_with_style[style]:
@@ -92,71 +93,61 @@ def create_workflow(document_name):
 			'workflow_name': f'{document_name} Workflow',
 			'document_type': document_name,
 			'workflow_state_field': 'workflow_state',
-			'is_active': 1})
+			'is_active': 1,
+			'send_email_alert':0})
 
-	bank_checker_allowed_state = ['Approved', 'Rejected']
-	bobp_bank_checker_allowed_state = ['Processing', 'Completed', 'Failed']
-	if document_name == 'Outward Bank Payment':
-		bank_checker_allowed_state += ['Initiated',
-				'Initiation Error', 'Initiation Failed', 'Transaction Failed', 'Initiation Pending',
-				'Transaction Error', 'Transaction Pending', 'Transaction Completed']
 	workflow_doc.append('states',{'state': 'Pending',
 				'doc_status': 0,
-				'update_field': 'status',
+				'update_field': 'workflow_state',
 				'update_value': 'Pending',
 				'allow_edit': 'Bank Maker'})
 
-	for state in bank_checker_allowed_state:
-		workflow_doc.append('states',{'state': state,
+	pending_next_states = [['Approve', 'Approved'], ['Reject', 'Rejected']]
+	for state in pending_next_states:
+		workflow_doc.append('states',{'state': state[1],
 					'doc_status': 1,
-					'update_field': 'status',
-					'update_value': state,
+					'update_field': 'workflow_state',
+					'update_value': state[1],
 					'allow_edit': 'Bank Checker'})
 
-	pending_next_states = [['Approve', 'Approved'], ['Reject', 'Rejected']]
-	approved_next_states = {'Invoke': ['Initiated', 'Initiation Error', 'Initiation Failed', 'Initiation Pending']}
-	initiated_next_states = {'Invoke': ['Transaction Error', 'Transaction Failed', 'Transaction Pending', 'Transaction Completed']}
-	for state in pending_next_states:
 		workflow_doc.append('transitions',{'state': 'Pending',
 			'action': state[0],
+			'allow_self_approval': 0,
 			'next_state': state[1],
-			'allowed': 'Bank Checker'})
+			'allowed': 'Bank Checker'})	
 	if document_name == 'Outward Bank Payment':
-		for state in approved_next_states['Invoke']:
-			workflow_doc.append('transitions',{'state': 'Approved',
-				'action': 'Invoke',
-				'next_state': state,
-				'allowed': 'Bank Checker'})
-		for state in initiated_next_states['Invoke']:
-			workflow_doc.append('transitions',{'state': 'Initiated',
-				'action': 'Invoke',
-				'next_state': state,
-				'allowed': 'Bank Checker'})
+		optional_states = ['Initiated',
+				'Initiation Error', 'Initiation Failed', 'Transaction Failed', 'Initiation Pending',
+				'Transaction Error', 'Transaction Pending', 'Transaction Completed']
 	if document_name == 'Bulk Outward Bank Payment':
-		for state in bobp_bank_checker_allowed_state:
-			workflow_doc.append('transitions',{'state': 'Approved',
-				'action': 'Invoke',
-				'next_state': state,
-				'allowed': 'Bank Checker'})
+		optional_states = ['Initiated', 'Processing', 'Partially Completed', 'Completed', 'Failed']
+
+	for state in optional_states:
+		workflow_doc.append('states',{'state': state,
+				'is_optional_state': 1,
+				'doc_status': 1,
+				'update_field': 'workflow_state',
+				'update_value': state,
+				'allow_edit': 'Bank Checker'})
 
 	workflow_doc.save()
 
 def set_permissions_to_core_doctypes():
 	roles = ['Bank Checker', 'Bank Maker']
-	core_doc_list = ['Bank Account']
+	core_doc_list = ['Bank Account', 'Company', 'Supplier', 'Customer', 'Employee']
 
-	# assign read permission
+	# assign select permission
 	for role in roles:
 		for doc in core_doc_list:
 			add_permission(doc, role, 0)
-			update_permission_property(doc, role, 0, 'read', 1)
+			update_permission_property(doc, role, 0, 'select', 1)
 
 @frappe.whitelist()
 def get_company_bank_account(doctype, txt, searchfield, start, page_len, filters):
 	bank_accounts = []
 	for acc in frappe.get_list("Bank Account", filters= filters,fields=["name"]):
 		if not acc['name'] in bank_accounts:
-			is_enabled = frappe.db.get_value('Bank API Integration', 
+			is_enabled = frappe.get_value('Bank API Integration', 
 				{'bank_account': acc['name']}, 
 				'enable_transaction')
 			if is_enabled:
@@ -169,7 +160,7 @@ def get_transaction_type(bank_account):
 	mappings = {
 		'ICICI': ['Internal Payments', 'External Payments', 'Virtual A/c Payments']
 	}
-	bank_api_provider = frappe.db.get_value('Bank API Integration', {'bank_account': bank_account}, 'bank_api_provider')
+	bank_api_provider = frappe.get_value('Bank API Integration', {'bank_account': bank_account}, 'bank_api_provider')
 	
 	if not bank_api_provider in mappings:
 		return common_transaction_types
