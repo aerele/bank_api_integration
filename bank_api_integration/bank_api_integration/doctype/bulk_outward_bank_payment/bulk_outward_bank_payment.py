@@ -14,8 +14,11 @@ class BulkOutwardBankPayment(Document):
 		self.set_onload('transaction_summary', self.get_transaction_summary())
 
 	def get_transaction_summary(self):
+		failed_doc_count = 0
+		initiated_txn_count = 0
 		transaction_summary = [
 						{'status':'Initiated','total_docs':0},
+						{'status':'Initiation Pending','total_docs':0},
 						{'status':'Initiation Error','total_docs':0},
 						{'status':'Initiation Failed','total_docs':0},
 						{'status':'Transaction Error','total_docs':0},
@@ -24,7 +27,17 @@ class BulkOutwardBankPayment(Document):
 						{'status':'Transaction Completed','total_docs':0}]
 		for row in transaction_summary:
 			row['total_docs'] = frappe.db.count('Outward Bank Payment', {'bobp': self.name, 'workflow_state': row['status']})
+			if row['status'] in ['Initiation Error',
+								'Initiation Failed',
+								'Transaction Error',
+								'Transaction Failed'] and row['total_docs']:
+				failed_doc_count += row['total_docs']
+			
+			if row['status'] in ['Initiated', 'Initiation Pending'] and row['total_docs']:
+				initiated_txn_count += row['total_docs']
 
+		self.set_onload('failed_doc_count', failed_doc_count)
+		self.set_onload('initiated_txn_count', initiated_txn_count)
 		return transaction_summary
 	def validate(self):
 		total_payment_amount = 0
@@ -35,7 +48,6 @@ class BulkOutwardBankPayment(Document):
 
 	def on_submit(self):
 		if self.workflow_state == 'Approved':
-			failed_obp_list = []
 			password_entered = None
 			integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': self.company_bank_account})
 			disabled_accounts = frappe.get_site_config().bank_api_integration['disable_transaction']
@@ -64,29 +76,20 @@ class BulkOutwardBankPayment(Document):
 				if not frappe.db.exists('Outward Bank Payment', data):
 					data['doctype'] = 'Outward Bank Payment'
 					doc = frappe.get_doc(data)
-					doc.save()
+					doc.save(ignore_permissions=True)
 					doc.submit()
-					status = frappe.db.get_value('Outward Bank Payment', doc.name, 'status')
-					if status in  ['Initiation Error', 'Initiation Failed']:
-						failed_obp_list.append(get_link_to_form("Outward Bank Payment", doc.name))
+					status = frappe.db.get_value('Outward Bank Payment', doc.name, 'workflow_state')
 					frappe.db.set_value('Outward Bank Payment Details',{'parent':self.name,
 						'party_type': row.party_type,
 						'party': row.party,
-						'amount': row.amount},'outward_bank_payment',doc.name)
+						'amount': row.amount},'outward_bank_payment',get_link_to_form('Outward Bank Payment', doc.name))
 					frappe.db.set_value('Outward Bank Payment Details',{'parent':self.name,
 						'party_type': row.party_type,
 						'party': row.party,
 						'amount': row.amount,
-						'outward_bank_payment':doc.name},'status', status)
+						'outward_bank_payment':get_link_to_form('Outward Bank Payment', doc.name)},'status', status)
 			frappe.db.commit()
 			self.reload()
-			if failed_obp_list:
-				failed_obp = ','.join(failed_obp_list)
-				frappe.throw(_(f"Initiation failed for the below obp(s) {failed_obp}"))
-			else:
-				frappe.msgprint(_('Payment initiated successfully'))
-
-
 
 @frappe.whitelist()
 def recreate_failed_transaction(source_name, target_doc=None):
@@ -107,7 +110,7 @@ def recreate_failed_transaction(source_name, target_doc=None):
 				"party": "party",
 				"amount": "amount"
 			},
-			"condition": lambda doc: doc.status not in ['Initiated', 'Transaction Completed']
+			"condition": lambda doc: doc.status not in ['Initiated', 'Transaction Completed', 'Initiation Pending', 'Transaction Pending']
 		},
 		}, target_doc)
 	return doc
