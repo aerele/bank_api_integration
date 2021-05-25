@@ -105,7 +105,7 @@ after_install = "bank_api_integration.bank_api_integration.doctype.bank_api_inte
 scheduler_events = {
 	"cron": {
 		"0/30 * * * *": [
-		"bank_api_integration.bank_api_integration.doctype.outward_bank_payment.outward_bank_payment.update_transaction_status"
+		"bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.update_transaction_status"
 		]
 	}
 }

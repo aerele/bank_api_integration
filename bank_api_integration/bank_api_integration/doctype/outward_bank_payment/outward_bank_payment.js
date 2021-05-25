@@ -3,7 +3,7 @@
 {% include 'bank_api_integration/bank_api_integration/utils/common_fields.js' %};
 frappe.ui.form.on('Outward Bank Payment', {
 	refresh: function(frm) {
-		if (frm.doc.docstatus == 1 && frm.doc.status == 'Initiated'){ 
+		if (frm.doc.docstatus == 1 && ['Initiated', 'Initiation Pending', 'Transaction Pending'].includes(frm.doc.workflow_state)){ 
 			frm.add_custom_button(__("Update Transaction Status"), function() {
 			 frm.trigger('update_txn_status');
 		 });}
@@ -23,7 +23,7 @@ frappe.ui.form.on('Outward Bank Payment', {
 	},
 	update_txn_status: function(frm){
 		frappe.call({
-			method: "bank_api_integration.bank_api_integration.doctype.outward_bank_payment.outward_bank_payment.update_transaction_status",
+			method: "bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.update_transaction_status",
 			freeze: true,
 			freeze_message: __("Processing..."),
 			args: {obp_name:frm.doc.name},
@@ -147,7 +147,6 @@ frappe.ui.form.on('Outward Bank Payment', {
 				args:args
 			},
 			callback: function(r, rt) {
-				console.log(r.message);
 				if(r.message) {
 					var total_positive_outstanding = 0;
 					var total_negative_outstanding = 0;
@@ -175,7 +174,6 @@ frappe.ui.form.on('Outward Bank Payment', {
 				}
 				frm.events.allocate_party_amount_against_ref_docs(frm,
 					(frm.doc.amount));
-				console.log(frm.doc.payment_references);
 				refresh_field('payment_references');
 			}
 		});
@@ -204,7 +202,6 @@ frappe.ui.form.on('Outward Bank Payment', {
 
 			var allocated_positive_outstanding =  paid_amount + allocated_negative_outstanding;
 		} else if (in_list(["Customer", "Supplier"], frm.doc.party_type)) {
-			console.log(paid_amount, total_negative_outstanding);
 			if(paid_amount > total_negative_outstanding) {
 				if(total_negative_outstanding == 0) {
 					frappe.msgprint(__("Cannot {0} {1} {2} without any negative outstanding invoice",

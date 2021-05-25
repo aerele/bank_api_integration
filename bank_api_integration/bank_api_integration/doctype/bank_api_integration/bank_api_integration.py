@@ -11,12 +11,64 @@ from banking_api.common_provider import CommonProvider
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from frappe.permissions import add_permission, update_permission_property
 from frappe.core.doctype.version.version import get_diff
+from frappe.utils import get_link_to_form
 
 class BankAPIIntegration(Document):
 	pass
 
-def get_api_provider_class(doc_name):
-	integration_doc = frappe.get_doc('Bank API Integration', doc_name)
+@frappe.whitelist()
+def update_transaction_status(obp_name=None,bobp_name=None):
+	bulk_update = True
+	if obp_name or bobp_name:
+		bulk_update = False
+	if obp_name:
+		obp_list = [{'name': obp_name}]
+	if bobp_name:
+		obp_list = frappe.db.get_all('Outward Bank Payment', {'workflow_state': ['in', ['Initiated','Initiation Pending','Transaction Pending']], 'bobp': ['=', bobp_name]})
+	if bulk_update:
+		obp_list = frappe.db.get_all('Outward Bank Payment', {'workflow_state': ['in', ['Initiated','Initiation Pending','Transaction Pending']]})
+
+	failed_obp_list = []
+	if not obp_list:
+		frappe.throw(_("No transaction found in the initiated state."))
+	for doc in obp_list:
+		res = None
+		workflow_state = None
+		obp_doc = frappe.get_doc('Outward Bank Payment', doc['name'])
+		prov, config = get_api_provider_class(obp_doc.company_bank_account)
+		filters = {"UNIQUEID": obp_doc.name}
+		try:
+			res = prov.get_transaction_status(filters)
+			if res['status'] == 'SUCCESS' and 'utr_number' in res:
+				workflow_state = 'Transaction Completed'
+			elif res['status'] in ['FAILURE', 'DUPLICATE']:
+				workflow_state = 'Transaction Failed'
+			elif 'PENDING' in res['status']:
+				workflow_state = 'Transaction Pending'
+			else:
+				workflow_state = 'Transaction Error'
+		except:
+			workflow_state = 'Transaction Error'
+			res = frappe.get_traceback()
+		
+		log_name = log_request(obp_doc.name,'Update Transaction Status', filters, config, res)
+		obp_doc.save(ignore_permissions=True)
+		obp_doc.reload()
+		frappe.db.set_value('Outward Bank Payment', {'name': obp_doc.name}, 'workflow_state', workflow_state)
+		frappe.db.commit()
+		if workflow_state in ['Transaction Pending', 'Transaction Error', 'Transaction Failed'] and not bulk_update:
+			if not obp_doc.bobp:
+				frappe.throw(_(f'An error occurred while making request. Kindly check request log for more info {get_link_to_form("Bank API Request Log", log_name)}'))
+			else:
+				failed_obp_list.append(get_link_to_form("Outward Bank Payment", doc['name']))
+	if failed_obp_list and not bulk_update:
+		failed_obp = ','.join(failed_obp_list)
+		frappe.throw(_(f"Transaction status update failed for the below obp(s) {failed_obp}"))
+	if bobp_name and not bulk_update:
+		frappe.msgprint(_("Transaction Status Updated"))
+
+def get_api_provider_class(company_bank_account):
+	integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': company_bank_account})
 	proxies = frappe.get_site_config().bank_api_integration['proxies']
 	config = {"APIKEY": integration_doc.get_password(fieldname="api_key"), 
 			"CORPID": integration_doc.corp_id,
@@ -31,15 +83,15 @@ def get_api_provider_class(doc_name):
 	prov = CommonProvider(integration_doc.bank_api_provider, config, integration_doc.use_sandbox, proxies, file_paths, frappe.local.site_path)
 	return prov, config
 
-def log_request(doc_name, api_method, config, res, filters):
+def log_request(doc_name, api_method, filters, config, res):
 	request_log = frappe.get_doc({
 		"doctype": "Bank API Request Log",
 		"user": frappe.session.user,
 		"reference_document":doc_name,
 		"api_method": api_method,
-		"filters": str(filters),
-		"config_details": str(config),
-		"response": res
+		"filters": json.dumps(filters, indent=4) if filters else None,
+		"config_details": json.dumps(config, indent=4),
+		"response": json.dumps(res, indent=4)
 	})
 	request_log.save(ignore_permissions=True)
 	frappe.db.commit()

@@ -36,7 +36,7 @@ class BulkOutwardBankPayment(Document):
 								'Transaction Failed'] and row['total_docs']:
 				failed_doc_count += row['total_docs']
 			
-			if row['status'] in ['Initiated', 'Initiation Pending'] and row['total_docs']:
+			if row['status'] in ['Initiated', 'Initiation Pending', 'Transaction Pending'] and row['total_docs']:
 				initiated_txn_count += row['total_docs']
 
 		self.set_onload('failed_doc_count', failed_doc_count)

@@ -4,7 +4,7 @@
 frappe.ui.form.on("Bulk Outward Bank Payment", {
 		refresh: function(frm) {
 			frm.trigger("show_summary");
-			if (frm.doc.docstatus == 1 && frm.doc.status != 'Rejected'){
+			if (frm.doc.docstatus == 1 && frm.doc.workflow_state != 'Rejected'){
 				if(frm.doc.__onload.initiated_txn_count ){
 				frm.add_custom_button(__("Update Transaction Status"), function() {
 				 frm.trigger('update_txn_status');
@@ -39,7 +39,7 @@ frappe.ui.form.on("Bulk Outward Bank Payment", {
 		},
 		update_txn_status: function(frm){
 			frappe.call({
-				method: "bank_api_integration.bank_api_integration.doctype.outward_bank_payment.outward_bank_payment.update_transaction_status",
+				method: "bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.update_transaction_status",
 				freeze: true,
 				freeze_message: __("Processing..."),
 				args: {bobp_name:frm.doc.name}
@@ -47,9 +47,9 @@ frappe.ui.form.on("Bulk Outward Bank Payment", {
 		},
 		after_workflow_action: (frm) => {
 		if(frm.doc.workflow_state == "Rejected"){
-		frm.set_value("status", "Pending");
+		frm.set_value("workflow_state", "Pending");
 		var me = this;
-		var d = new frappe.ui.Dialog({
+		var reject_dialog = new frappe.ui.Dialog({
 			title: __('Reason for Rejection'),
 			fields: [
 				{
@@ -79,8 +79,39 @@ frappe.ui.form.on("Bulk Outward Bank Payment", {
 				});
 			}
 		});
-		d.show();
+		reject_dialog.show();
 
+		}
+		if(frm.doc.workflow_state == "Approved"){
+		frm.set_value("workflow_state", "Pending");
+		var password_dialog = new frappe.ui.Dialog({
+			title: __('Enter the Password'),
+			fields: [
+				{
+					"fieldname": "transaction_password",
+					"fieldtype": "Password",
+					"reqd": 1,
+				}
+			],
+			primary_action: function() {
+				frm.save('Update');
+			}
+		});
+		password_dialog.show();
+		var otp_dialog = new frappe.ui.Dialog({
+			title: __('Enter the OTP'),
+			fields: [
+				{
+					"fieldname": "otp",
+					"fieldtype": "Data",
+					"reqd": 1,
+				}
+			],
+			primary_action: function() {
+				frm.save('Update');
+			}
+		});
+		otp_dialog.show();
 		}
 	},
 	show_summary: function(frm) {

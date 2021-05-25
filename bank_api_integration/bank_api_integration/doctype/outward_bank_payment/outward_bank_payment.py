@@ -31,13 +31,14 @@ class OutwardBankPayment(Document):
 			if completed_doc_count>=1:
 				status = 'Partially Completed'
 			if completed_doc_count == total_payments:
-				status = 'Completed'	
+				status = 'Completed' 
 			frappe.db.set_value('Bulk Outward Bank Payment', {'name': self.bobp}, 'workflow_state', status)
 			frappe.db.set_value('Outward Bank Payment Details',{'parent':self.bobp,
 							'party_type': self.party_type,
 							'party': self.party,
 							'amount': self.amount,
 							'outward_bank_payment': get_link_to_form('Outward Bank Payment', self.name)},'status', self.workflow_state)
+			frappe.db.commit()
 		if self.reconcile_action == 'Auto Reconcile Oldest First Invoice' and self.workflow_state == 'Transaction Completed':
 			references = []
 			amount = self.amount
