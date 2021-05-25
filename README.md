@@ -14,3 +14,5 @@ Frappe application to achieve banking API integration.
 
 ### TODO
 - Need to figure out common fields for the different provider on the settings page
+
+** Note: Malicious activities can be avoided by disabling the server script for the site that has Bank API Integration.
