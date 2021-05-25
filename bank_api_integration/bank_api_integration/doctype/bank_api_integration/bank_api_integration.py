@@ -4,11 +4,13 @@
 
 from __future__ import unicode_literals
 import frappe, json
+from frappe import _
 from frappe.model.document import Document
 import banking_api
 from banking_api.common_provider import CommonProvider
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from frappe.permissions import add_permission, update_permission_property
+from frappe.core.doctype.version.version import get_diff
 
 class BankAPIIntegration(Document):
 	pass
@@ -141,6 +143,19 @@ def set_permissions_to_core_doctypes():
 		for doc in core_doc_list:
 			add_permission(doc, role, 0)
 			update_permission_property(doc, role, 0, 'select', 1)
+
+def is_authorized(new_doc):
+	old_doc = new_doc.get_doc_before_save()
+	if old_doc:
+		diff = get_diff(old_doc, new_doc)
+		for changed in diff.changed:
+			field, old, new = changed
+			if field in ['otp', 'is_otp_verified']:
+				frappe.throw('Unauthorized Access')
+	elif new_doc.otp or new_doc.is_otp_verified:
+		frappe.throw('Unauthorized Access')
+	else:
+		return
 
 @frappe.whitelist()
 def get_company_bank_account(doctype, txt, searchfield, start, page_len, filters):

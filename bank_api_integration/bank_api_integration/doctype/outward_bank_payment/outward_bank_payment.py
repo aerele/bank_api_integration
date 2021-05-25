@@ -13,7 +13,10 @@ from erpnext.accounts.doctype.payment_entry.payment_entry import get_negative_ou
 from erpnext.controllers.accounts_controller import get_supplier_block_status
 from erpnext.accounts.utils import get_outstanding_invoices, get_account_currency
 from frappe.utils import add_months, nowdate
+from bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration import is_authorized
 class OutwardBankPayment(Document):
+	def on_update(self):
+		is_authorized(self)
 	def on_change(self):
 		if self.bobp and not self.workflow_state == 'Pending':
 			status = 'Processing'

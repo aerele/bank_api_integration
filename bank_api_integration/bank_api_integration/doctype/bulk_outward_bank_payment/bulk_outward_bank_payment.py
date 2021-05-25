@@ -3,6 +3,7 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
+from bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration import is_authorized
 import frappe
 from frappe import _
 from frappe.model.document import Document
@@ -10,6 +11,8 @@ from frappe.utils import flt, get_link_to_form
 from frappe.model.mapper import get_mapped_doc
 
 class BulkOutwardBankPayment(Document):
+	def on_update(self):
+		is_authorized(self)
 	def onload(self):
 		self.set_onload('transaction_summary', self.get_transaction_summary())
 
