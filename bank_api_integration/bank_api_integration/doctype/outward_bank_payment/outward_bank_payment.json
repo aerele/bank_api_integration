@@ -25,6 +25,8 @@
   "reconcile_section",
   "get_outstanding_invoice",
   "payment_references",
+  "otp",
+  "is_otp_verified",
   "amended_from"
  ],
  "fields": [
@@ -148,12 +150,27 @@
    "label": "UTR Number",
    "no_copy": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "otp",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "OTP",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_otp_verified",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is OTP Verified",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-24 23:15:59.583447",
+ "modified": "2021-05-25 07:07:50.794402",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Outward Bank Payment",
