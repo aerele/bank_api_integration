@@ -17,6 +17,7 @@
   "amount",
   "column_break_9",
   "party",
+  "remarks",
   "section_break_11",
   "bobp",
   "payment_entry",
@@ -27,6 +28,7 @@
   "payment_references",
   "otp",
   "is_otp_verified",
+  "retry_count",
   "amended_from"
  ],
  "fields": [
@@ -165,12 +167,24 @@
    "hidden": 1,
    "label": "Is OTP Verified",
    "read_only": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "retry_count",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Retry Count",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-25 07:07:50.794402",
+ "modified": "2021-05-27 09:55:26.668029",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Outward Bank Payment",
