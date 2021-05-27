@@ -236,7 +236,7 @@ def create_defaults():
 		custom_fields, ignore_validate=frappe.flags.in_patch, update=True)
 
 	#Create workflow state
-	states_with_style = {'Success': ['Initiated', 'Transaction Completed', 'Completed'],
+	states_with_style = {'Success': ['Verified','Initiated', 'Transaction Completed', 'Completed'],
 	'Danger': ['Initiation Error', 'Initiation Failed', 'Transaction Failed', 'Transaction Error', 'Failed'],
 	'Primary': ['Transaction Pending', 'Initiation Pending', 'Processing', 'Partially Completed']}
 
@@ -280,11 +280,11 @@ def create_workflow(document_name):
 			'next_state': state[1],
 			'allowed': 'Bank Checker'})	
 	if document_name == 'Outward Bank Payment':
-		optional_states = ['Initiated',
+		optional_states = ['Verified','Initiated',
 				'Initiation Error', 'Initiation Failed', 'Transaction Failed', 'Initiation Pending',
 				'Transaction Error', 'Transaction Pending', 'Transaction Completed']
 	if document_name == 'Bulk Outward Bank Payment':
-		optional_states = ['Initiated', 'Processing', 'Partially Completed', 'Completed', 'Failed']
+		optional_states = ['Verified','Initiated', 'Processing', 'Partially Completed', 'Completed', 'Failed']
 
 	for state in optional_states:
 		workflow_doc.append('states',{'state': state,
