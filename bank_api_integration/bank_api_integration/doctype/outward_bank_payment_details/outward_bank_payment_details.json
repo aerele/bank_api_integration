@@ -9,6 +9,7 @@
   "party",
   "amount",
   "remarks",
+  "reason_for_rejection",
   "status",
   "outward_bank_payment"
  ],
@@ -60,12 +61,17 @@
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Remarks"
+  },
+  {
+   "fieldname": "reason_for_rejection",
+   "fieldtype": "Small Text",
+   "label": "Reason for Rejection"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2021-05-27 06:28:31.023412",
+ "modified": "2021-05-27 15:31:25.347493",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Outward Bank Payment Details",

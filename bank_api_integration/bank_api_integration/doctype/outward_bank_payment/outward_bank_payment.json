@@ -14,10 +14,11 @@
   "transaction_type",
   "section_break_4",
   "party_type",
+  "party",
   "amount",
   "column_break_9",
-  "party",
   "remarks",
+  "reason_for_rejection",
   "section_break_11",
   "bobp",
   "payment_entry",
@@ -114,7 +115,7 @@
   {
    "fieldname": "section_break_4",
    "fieldtype": "Section Break",
-   "label": "Party Details"
+   "label": "Payment Details"
   },
   {
    "fieldname": "column_break_3",
@@ -171,7 +172,8 @@
   {
    "fieldname": "remarks",
    "fieldtype": "Small Text",
-   "label": "Remarks"
+   "label": "Remarks",
+   "reqd": 1
   },
   {
    "fieldname": "retry_count",
@@ -179,12 +181,17 @@
    "hidden": 1,
    "label": "Retry Count",
    "read_only": 1
+  },
+  {
+   "fieldname": "reason_for_rejection",
+   "fieldtype": "Small Text",
+   "label": "Reason for Rejection"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-27 09:55:26.668029",
+ "modified": "2021-05-27 15:32:51.885441",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Outward Bank Payment",

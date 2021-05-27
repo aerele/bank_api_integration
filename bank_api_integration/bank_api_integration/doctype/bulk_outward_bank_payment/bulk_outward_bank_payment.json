@@ -16,6 +16,7 @@
   "outward_bank_payment_details",
   "no_of_payments",
   "remarks",
+  "reason_for_rejection",
   "total_payment_amount",
   "otp",
   "retry_count",
@@ -109,7 +110,8 @@
   {
    "fieldname": "remarks",
    "fieldtype": "Small Text",
-   "label": "Remarks"
+   "label": "Remarks",
+   "reqd": 1
   },
   {
    "fieldname": "retry_count",
@@ -117,11 +119,16 @@
    "hidden": 1,
    "label": "Retry Count",
    "read_only": 1
+  },
+  {
+   "fieldname": "reason_for_rejection",
+   "fieldtype": "Small Text",
+   "label": "Reason for Rejection"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-27 09:53:33.536520",
+ "modified": "2021-05-27 15:28:52.038161",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bulk Outward Bank Payment",
