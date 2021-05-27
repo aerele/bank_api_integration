@@ -262,7 +262,6 @@ def create_workflow(document_name):
 
 	workflow_doc.append('states',{'state': 'Pending',
 				'doc_status': 0,
-				'is_optional_state': 1,
 				'update_field': 'workflow_state',
 				'update_value': 'Pending',
 				'allow_edit': 'Bank Maker'})
