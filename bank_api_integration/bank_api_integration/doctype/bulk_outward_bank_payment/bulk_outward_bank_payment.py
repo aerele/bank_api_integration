@@ -49,50 +49,6 @@ class BulkOutwardBankPayment(Document):
 		self.total_payment_amount = total_payment_amount
 		self.no_of_payments = len(self.outward_bank_payment_details)
 
-	def on_submit(self):
-		if self.workflow_state == 'Approved':
-			password_entered = None
-			integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': self.company_bank_account})
-			disabled_accounts = frappe.get_site_config().bank_api_integration['disable_transaction']
-			
-			if disabled_accounts == '*' or integration_doc.account_number in disabled_accounts:
-				frappe.throw(_(f'Unable to process transaction for the selected bank account. Please contact Administrator.'))
-				return
-
-			if integration_doc.enable_password_security:
-				password_defined = integration_doc.get_password(fieldname="transaction_password")
-				password_entered = self.get_password(fieldname="transaction_password")
-
-				if not password_defined == password_entered:
-					frappe.throw(_(f'Invalid Password'))
-					return
-			for row in self.outward_bank_payment_details:
-				data = {
-				'party_type': row.party_type,
-				'party': row.party,
-				'amount': row.amount,
-				'transaction_type': self.transaction_type,
-				'company_bank_account': self.company_bank_account,
-				'reconcile_action': self.reconcile_action,
-				'transaction_password': password_entered,
-				'bobp': self.name}
-				if not frappe.db.exists('Outward Bank Payment', data):
-					data['doctype'] = 'Outward Bank Payment'
-					doc = frappe.get_doc(data)
-					doc.save(ignore_permissions=True)
-					doc.submit()
-					status = frappe.db.get_value('Outward Bank Payment', doc.name, 'workflow_state')
-					frappe.db.set_value('Outward Bank Payment Details',{'parent':self.name,
-						'party_type': row.party_type,
-						'party': row.party,
-						'amount': row.amount},'outward_bank_payment',get_link_to_form('Outward Bank Payment', doc.name))
-					frappe.db.set_value('Outward Bank Payment Details',{'parent':self.name,
-						'party_type': row.party_type,
-						'party': row.party,
-						'amount': row.amount,
-						'outward_bank_payment':get_link_to_form('Outward Bank Payment', doc.name)},'status', status)
-			frappe.db.commit()
-			self.reload()
 
 @frappe.whitelist()
 def recreate_failed_transaction(source_name, target_doc=None):
