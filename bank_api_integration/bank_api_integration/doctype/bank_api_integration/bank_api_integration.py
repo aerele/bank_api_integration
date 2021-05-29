@@ -4,10 +4,10 @@
 
 from __future__ import unicode_literals
 import frappe, json
+from six import string_types
 from frappe import _
 from frappe.model.document import Document
-import banking_api
-from banking_api.common_provider import CommonProvider
+from banking_api.banking_api.common_provider import CommonProvider
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from frappe.permissions import add_permission, update_permission_property
 from frappe.core.doctype.version.version import get_diff
@@ -27,7 +27,7 @@ def initiate_transaction_with_otp(doc, otp):
 
 	res = None
 	currency = frappe.db.get_value("Company", doc.company, "default_currency")
-	prov, config = doc.get_api_provider_class()
+	prov, config = get_api_provider_class(doc.company_bank_account)
 	filters = {
 		"CUSTOMERINDUCED": "N",
 		"REMARKS": doc.remarks,
@@ -50,7 +50,7 @@ def initiate_transaction_with_otp(doc, otp):
 				},'bank_account_no')
 	}
 	try:
-		res = prov.initiate_transaction_without_otp(filters)
+		res = prov.initiate_transaction_with_otp(filters)
 		if res['status'] == 'SUCCESS' and 'utr_number' in res:
 			frappe.db.set_value('Outward Bank Payment',{'name':doc.name},'utr_number',res['utr_number'])
 			doc.reload()
@@ -66,7 +66,7 @@ def initiate_transaction_with_otp(doc, otp):
 	except:
 		workflow_state = 'Initiation Error'
 		res = frappe.get_traceback()
-	log_name = doc.log_request('Initiate Transaction without OTP', filters, config, res)
+	log_name = doc.log_request('Initiate Transaction with OTP', filters, config, res)
 	doc.save(ignore_permissions=True)
 	doc.reload()
 	if workflow_state:
@@ -76,7 +76,7 @@ def initiate_transaction_with_otp(doc, otp):
 			frappe.throw(_(f'An error occurred while making request. Kindly check request log for more info {get_link_to_form("Bank API Request Log", log_name)}'))
 
 def initiate_transaction_without_otp(doc):
-	if doc.workflow_state == 'Approved':
+	if doc.workflow_state == 'Verified':
 		workflow_state = None
 		integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': doc.company_bank_account})
 		disabled_accounts = frappe.get_site_config().bank_api_integration['disable_transaction']
@@ -87,7 +87,7 @@ def initiate_transaction_without_otp(doc):
 
 		res = None
 		currency = frappe.db.get_value("Company", doc.company, "default_currency")
-		prov, config = doc.get_api_provider_class()
+		prov, config = doc.get_api_provider_class(doc.company_bank_account)
 		filters = {
 			"REMARKS": doc.remarks,
 			"UNIQUEID": doc.name,
@@ -130,6 +130,29 @@ def initiate_transaction_without_otp(doc):
 		if workflow_state in ['Initiation Error', 'Initiation Failed']:
 			if not doc.bobp:
 				frappe.throw(_(f'An error occurred while making request. Kindly check request log for more info {get_link_to_form("Bank API Request Log", log_name)}'))
+
+@frappe.whitelist()
+def send_otp(doctype, docname):
+	is_otp_sent = False
+	res = None
+	doc = frappe.get_doc(doctype, docname)
+	prov, config = get_api_provider_class(doc.company_bank_account)
+	doc.retry_count += 1
+	doc.save(ignore_permissions=True)
+	doc.reload()
+	
+	filters = {
+		"UNIQUEID": doc.name,
+		"AMOUNT": str(doc.amount)
+	}
+	try:
+		res = prov.send_otp(filters)
+		if res['status'] == 'SUCCESS':
+			is_otp_sent = True
+	except:
+		res = frappe.get_traceback()
+	log_name = log_request('Send OTP', filters, config, res)
+	return is_otp_sent
 
 @frappe.whitelist()
 def update_transaction_status(obp_name=None,bobp_name=None):
@@ -237,7 +260,7 @@ def create_defaults():
 
 	#Create workflow state
 	states_with_style = {'Success': ['Verified','Initiated', 'Transaction Completed', 'Completed'],
-	'Danger': ['Initiation Error', 'Initiation Failed', 'Transaction Failed', 'Transaction Error', 'Failed'],
+	'Danger': ['Verification Failed', 'Initiation Error', 'Initiation Failed', 'Transaction Failed', 'Transaction Error', 'Failed'],
 	'Primary': ['Transaction Pending', 'Initiation Pending', 'Processing', 'Partially Completed']}
 
 	for style in states_with_style.keys():
@@ -273,18 +296,18 @@ def create_workflow(document_name):
 					'update_field': 'workflow_state',
 					'update_value': state[1],
 					'allow_edit': 'Bank Checker'})
-
-		workflow_doc.append('transitions',{'state': 'Pending',
-			'action': state[0],
-			'allow_self_approval': 0,
-			'next_state': state[1],
-			'allowed': 'Bank Checker'})	
+		transitions = { 'state': 'Pending',
+						'action': state[0],
+						'allow_self_approval': 0,
+						'next_state': state[1],
+						'allowed': 'Bank Checker'}
+		workflow_doc.append('transitions',transitions)	
 	if document_name == 'Outward Bank Payment':
-		optional_states = ['Verified','Initiated',
+		optional_states = ['Verified','Verification Failed','Initiated',
 				'Initiation Error', 'Initiation Failed', 'Transaction Failed', 'Initiation Pending',
 				'Transaction Error', 'Transaction Pending', 'Transaction Completed']
 	if document_name == 'Bulk Outward Bank Payment':
-		optional_states = ['Verified','Initiated', 'Processing', 'Partially Completed', 'Completed', 'Failed']
+		optional_states = ['Verified','Verification Failed','Initiated', 'Processing', 'Partially Completed', 'Completed', 'Failed']
 
 	for state in optional_states:
 		workflow_doc.append('states',{'state': state,
@@ -313,9 +336,9 @@ def is_authorized(new_doc):
 		if diff:
 			for changed in diff.changed:
 				field, old, new = changed
-				if field in ['otp', 'is_otp_verified']:
+				if field in ['is_verified']:
 					frappe.throw('Unauthorized Access')
-	elif new_doc.otp or new_doc.is_otp_verified:
+	elif new_doc.is_verified:
 		frappe.throw('Unauthorized Access')
 	else:
 		return
