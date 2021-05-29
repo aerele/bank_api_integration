@@ -19,6 +19,7 @@
   "reason_for_rejection",
   "total_payment_amount",
   "retry_count",
+  "is_verified",
   "amended_from"
  ],
  "fields": [
@@ -108,11 +109,19 @@
    "fieldtype": "Small Text",
    "label": "Reason for Rejection",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_verified",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is Verified",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-29 09:27:37.607723",
+ "modified": "2021-05-29 11:16:22.739507",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bulk Outward Bank Payment",
