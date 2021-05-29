@@ -141,7 +141,8 @@ def send_otp(doctype, docname):
 	res = None
 	doc = frappe.get_doc(doctype, docname)
 	prov, config = get_api_provider_class(doc.company_bank_account)
-	frappe.db.set_value(doctype, docname, 'retry_count', doc.retry_count + 1)
+	retry_count = doc.retry_count + 1
+	frappe.db.set_value(doctype, docname, 'retry_count', retry_count)
 	filters = {
 		"UNIQUEID": doc.name,
 		"AMOUNT": str(doc.amount)
@@ -153,6 +154,11 @@ def send_otp(doctype, docname):
 	except:
 		res = frappe.get_traceback()
 	log_name = log_request(doc.name,'Send OTP', filters, config, res)
+	if not is_otp_sent:
+		retry_count = frappe.db.get_value(doc.doctype, doc.name, 'retry_count')
+		workflow_state = frappe.db.get_value(doc.doctype, doc.name, 'workflow_state')
+		if workflow_state == 'Approved' and retry_count == 3:
+			frappe.db.set_value(doc.doctype, doc.name, 'workflow_state', 'Verification Failed')
 	return is_otp_sent
 
 @frappe.whitelist()
@@ -399,4 +405,7 @@ def verify_and_initiate_transaction(doc, entered_password=None, otp=None):
 		if doc['doctype'] == 'Outward Bank Payment':
 			document = doc
 		workflow_state = initiate_transaction_with_otp(document, otp)
+		retry_count = frappe.db.get_value(doc['doctype'], doc['name'], 'retry_count')
+		if workflow_state == 'Approved' and retry_count == 3:
+			frappe.db.set_value(doc.doctype, doc.name, 'workflow_state', 'Verification Failed')
 		return workflow_state
