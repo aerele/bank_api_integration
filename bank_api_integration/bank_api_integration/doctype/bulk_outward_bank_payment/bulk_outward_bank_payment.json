@@ -98,6 +98,7 @@
    "reqd": 1
   },
   {
+   "default": "0",
    "fieldname": "retry_count",
    "fieldtype": "Int",
    "hidden": 1,
@@ -121,7 +122,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-29 11:16:22.739507",
+ "modified": "2021-05-29 12:13:11.876745",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bulk Outward Bank Payment",

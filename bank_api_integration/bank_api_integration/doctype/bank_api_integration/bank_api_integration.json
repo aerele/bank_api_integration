@@ -10,6 +10,7 @@
   "bank_api_provider",
   "column_break_3",
   "use_sandbox",
+  "unique_id",
   "bank_account",
   "credentials_section",
   "corp_id",
@@ -169,11 +170,19 @@
    "fieldname": "enable_password_security",
    "fieldtype": "Check",
    "label": "Enable Password Security"
+  },
+  {
+   "depends_on": "eval:doc.enable == 1 && doc.use_sandbox == 1 && doc.bank_api_provider == 'Test'",
+   "description": "This id will be used to get a response of transaction status API",
+   "fieldname": "unique_id",
+   "fieldtype": "Data",
+   "label": "Unique ID",
+   "mandatory_depends_on": "eval: doc.enable == 1 &&doc.use_sandbox == 1 && doc.bank_api_provider == 'Test'"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-05-22 13:04:19.285746",
+ "modified": "2021-05-29 13:35:44.053456",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bank API Integration",
