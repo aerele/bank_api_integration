@@ -27,8 +27,7 @@
   "reconcile_section",
   "get_outstanding_invoice",
   "payment_references",
-  "otp",
-  "is_otp_verified",
+  "is_verified",
   "retry_count",
   "amended_from"
  ],
@@ -108,6 +107,7 @@
   {
    "fieldname": "company_bank_account",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Company Bank Account",
    "options": "Bank Account",
    "reqd": 1
@@ -155,21 +155,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "otp",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "OTP",
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "is_otp_verified",
-   "fieldtype": "Check",
-   "hidden": 1,
-   "label": "Is OTP Verified",
-   "read_only": 1
-  },
-  {
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Remarks",
@@ -185,13 +170,23 @@
   {
    "fieldname": "reason_for_rejection",
    "fieldtype": "Small Text",
-   "label": "Reason for Rejection"
+   "label": "Reason for Rejection",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_verified",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is Verified",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-27 15:32:51.885441",
+ "modified": "2021-05-29 08:04:49.513967",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Outward Bank Payment",

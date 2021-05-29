@@ -18,9 +18,7 @@
   "remarks",
   "reason_for_rejection",
   "total_payment_amount",
-  "otp",
   "retry_count",
-  "is_otp_verified",
   "amended_from"
  ],
  "fields": [
@@ -93,21 +91,6 @@
    "reqd": 1
   },
   {
-   "fieldname": "otp",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "OTP",
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "is_otp_verified",
-   "fieldtype": "Check",
-   "hidden": 1,
-   "label": "Is OTP Verified",
-   "read_only": 1
-  },
-  {
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Remarks",
@@ -123,12 +106,13 @@
   {
    "fieldname": "reason_for_rejection",
    "fieldtype": "Small Text",
-   "label": "Reason for Rejection"
+   "label": "Reason for Rejection",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-27 15:28:52.038161",
+ "modified": "2021-05-29 09:27:37.607723",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bulk Outward Bank Payment",
