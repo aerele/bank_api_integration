@@ -72,55 +72,36 @@ frappe.ui.form.on("Bulk Outward Bank Payment", {
 					   }
 				   });
 			   }).addClass("btn-primary");		
-			   frm.add_custom_button(__("Reject"), function(){
-				   var reject_dialog = new frappe.ui.Dialog({
-						   title: __('Reason for Rejection'),
-						   fields: [
-							   {
-								   "fieldname": "reason",
-								   "fieldtype": "Small Text",
-								   "reqd": 1,
-								   "label": "Reason"
-							   }
-						   ],
-						   primary_action: function() {
-							   var data = reject_dialog.get_values();
-							   frappe.call({
-								   method: "frappe.desk.form.utils.add_comment",
-								   freeze: true,
-								   args: {
-									   reference_doctype: me.frm.doctype,
-									   reference_name: me.frm.docname,
-									   content: __('Reason for Rejection: ') + data.reason,
-									   comment_email: frappe.session.user,
-									   comment_by: frappe.session.user_fullname
-								   },
-								   callback: function(r) {
-									if(!r.exc) {
-										frappe.call({
-											method: "bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.update_status",
-											freeze: true,
-											args: {
-												doctype_name: "Bulk Outward Bank Payment",
-												docname: frm.doc.name,
-												status: "Rejected"
-											},
-										callback: function(r) {
-											if(!r.exc) {
-											reject_dialog.hide();
-											frm.reload_doc();
-											}
-										}
-									}
-										)
-									}
-								   }
-							   });
-						   }
-					   });
-					   reject_dialog.show();
-			   }).addClass("btn-danger");
-		   }
+		}
+		},
+		before_workflow_action: function(frm){
+			if(frm.selected_workflow_action == 'Reject'){
+				return new Promise((resolve, reject) => {
+					frappe.prompt({
+						fieldtype: 'Data',
+						label: __('Reason'),
+						fieldname: 'reason'
+					}, data => {
+						frappe.call({
+							method: "frappe.client.set_value",
+							freeze: true,
+							args: {
+								doctype: 'Outward Bank Payment',
+								name: frm.doc.name,
+								fieldname: 'reason_for_rejection',
+								value: data.reason,
+							},
+							callback: function(r) { 
+								if (r.message) {
+									resolve(r.message);
+								} else {
+									reject();
+								}
+							}
+						});
+					}, __('Reason for Rejection'), __('Submit'));
+				})
+		}
 		},
 		company_bank_account: function(frm) {
 			frappe.call({
