@@ -28,7 +28,6 @@ frappe.ui.form.on('Outward Bank Payment', {
 						},
 						callback: function(r) { 
 							if (r.message) {
-								frm.refresh();
 								resolve(r.message);
 							} else {
 								reject();

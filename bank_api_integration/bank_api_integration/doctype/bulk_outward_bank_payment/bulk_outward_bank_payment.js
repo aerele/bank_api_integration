@@ -16,63 +16,6 @@ frappe.ui.form.on("Bulk Outward Bank Payment", {
 					 });
 					}
 			}
-			if(frm.doc.docstatus == 0 && frappe.user.has_role('Bank Checker') && !frm.doc.__islocal){
-				frm.add_custom_button(__("Approve"), function(){
-				   let bank_account = frm.doc.company_bank_account;
-				   frappe.call({
-					   method: 'bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.get_field_status',
-					   freeze: true,
-					   args: {
-						   'bank_account': bank_account
-					   },
-					   callback: function(r) {
-						   let data = r.message;
-						   if (data) {
-							   let d = new frappe.ui.Dialog({
-								   title: __('Enter the Details'),
-								   fields: [
-									   {
-										   fieldtype: "Data",
-										   label: __("Transaction Password"),
-										   fieldname: "transaction_password",
-										   reqd: 1,
-										   depends_on: `eval: ${data.is_pwd_security_enabled}`
-									   },
-									   {
-										   fieldtype: "Int",
-										   label: __("OTP"),
-										   fieldname: "otp",
-										   reqd: 1,
-										   depends_on: `eval: ${data.is_otp_enabled}`
-									   }
-								   ],
-								   primary_action: function() {
-									var data = d.get_values();
-									frappe.call({
-										method: "bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.verify_transaction",
-										freeze: true,
-										args: {
-											doctype: "Bulk Outward Bank Payment",
-											docname: frm.doc.name,
-											entered_password:data.transaction_password,
-											otp: data.otp
-										},
-									callback: function(r) {
-										if(!r.exc) {
-										d.hide();
-										frm.reload_doc();
-										}
-									}
-								}
-									)
-								   }
-							   });
-							   d.show();
-						   }
-					   }
-				   });
-			   }).addClass("btn-primary");		
-		}
 		},
 		before_workflow_action: function(frm){
 			if(frm.selected_workflow_action == 'Reject'){
@@ -86,7 +29,7 @@ frappe.ui.form.on("Bulk Outward Bank Payment", {
 							method: "frappe.client.set_value",
 							freeze: true,
 							args: {
-								doctype: 'Outward Bank Payment',
+								doctype: 'Bulk Outward Bank Payment',
 								name: frm.doc.name,
 								fieldname: 'reason_for_rejection',
 								value: data.reason,
