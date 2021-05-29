@@ -3,97 +3,130 @@
 {% include 'bank_api_integration/bank_api_integration/utils/common_fields.js' %};
 frappe.ui.form.on('Outward Bank Payment', {
 	refresh: function(frm) {
+		frm.trigger('verify_and_initiate_payment');
 		if (frm.doc.docstatus == 1 && ['Initiated', 'Initiation Pending', 'Transaction Pending'].includes(frm.doc.workflow_state)){ 
 			frm.add_custom_button(__("Update Transaction Status"), function() {
 			 frm.trigger('update_txn_status');
 		 });}
-		if(frm.doc.docstatus == 0 && frappe.user.has_role('Bank Checker') && !frm.doc.__islocal){
-		 frm.add_custom_button(__("Approve"), function(){
-			let bank_account = frm.doc.company_bank_account;
-			frappe.call({
-				method: 'bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.get_field_status',
-				freeze: true,
-				args: {
-					'bank_account': bank_account
-				},
-				callback: function(r) {
-					let data = r.message;
-					if (data) {
-						let d = new frappe.ui.Dialog({
-							title: __('Enter the Details'),
-							fields: [
-								{
-									fieldtype: "Data",
-									label: __("Transaction Password"),
-									fieldname: "transaction_password",
-									reqd: 1,
-									depends_on: `eval: ${data.is_pwd_security_enabled}`
-								},
-								{
-									fieldtype: "Data",
-									label: __("OTP"),
-									fieldname: "otp",
-									reqd: 1,
-									depends_on: `eval: ${data.is_otp_enabled}`
-								}
-							],
-							primary_action: function() {
-								
+	},
+	before_workflow_action: function(frm){
+		if(frm.selected_workflow_action == 'Reject'){
+			return new Promise((resolve, reject) => {
+				frappe.prompt({
+					fieldtype: 'Data',
+					label: __('Reason'),
+					fieldname: 'reason'
+				}, data => {
+					frappe.call({
+						method: "frappe.client.set_value",
+						freeze: true,
+						args: {
+							doctype: 'Outward Bank Payment',
+							name: frm.doc.name,
+							fieldname: 'reason_for_rejection',
+							value: data.reason,
+						},
+						callback: function(r) { 
+							if (r.message) {
+								frm.refresh();
+								resolve(r.message);
+							} else {
+								reject();
 							}
-						});
-						d.show();
+						}
+					});
+				}, __('Reason for Rejection'), __('Submit'));
+			})
+	}
+	},
+	after_workflow_action: function(frm){
+		if(frm.doc.workflow_state == 'Approved'){
+		frappe.call({
+			method: 'bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.get_field_status',
+			freeze: true,
+			args: {
+				'bank_account': frm.doc.company_bank_account
+			},
+			callback: function(r) {
+				let data = r.message;
+				if (data) {
+					if (!data.is_otp_enabled && !data.is_pwd_security_enabled){
+						frappe.db.set_value('Outward Bank Payment', {'name': frm.doc.name},
+						'workflow_state', 'Verified')
 					}
 				}
-			});
-		}).addClass("btn-primary");		
-		frm.add_custom_button(__("Reject"), function(){
-			var reject_dialog = new frappe.ui.Dialog({
-					title: __('Reason for Rejection'),
-					fields: [
-						{
-							"fieldname": "reason",
-							"fieldtype": "Small Text",
-							"reqd": 1,
-							"label": "Reason"
+			}
+		})
+	}
+		frm.trigger('verify_and_initiate_payment');
+	},
+	verify_and_initiate_payment: function(frm){
+		if(frappe.user.has_role('Bank Checker') && frm.doc.workflow_state == 'Approved'){
+			frm.add_custom_button(__("Verify and Initiate Payment"), function(){
+			let dialog_fields = [];
+			let bank_account = frm.doc.company_bank_account;
+			frappe.call({
+				   method: 'bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.get_field_status',
+				   freeze: true,
+				   args: {
+					   'bank_account': bank_account
+				   },
+				   callback: function(r) {
+					   let data = r.message;
+					   if (data) {
+						if (data.is_otp_enabled && !data.is_pwd_security_enabled){
+							dialog_fields = [
+								{
+									fieldtype: "Int",
+									label: __("OTP"),
+									fieldname: "otp",
+									reqd: 1
+								}
+							]
+							show_dialog(frm, dialog_fields)
 						}
-					],
-					primary_action: function() {
-						var data = reject_dialog.get_values();
+						if (!data.is_otp_enabled && data.is_pwd_security_enabled){
+							dialog_fields = [
+								{
+									fieldtype: "Password",
+									label: __("Transaction Password"),
+									fieldname: "transaction_password",
+									reqd: 1
+								}
+							]
+							show_dialog(frm, dialog_fields)
+						}
+						if (data.is_otp_enabled && data.is_pwd_security_enabled){
 						frappe.call({
-							method: "frappe.desk.form.utils.add_comment",
+							method: 'bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.send_otp',
 							freeze: true,
 							args: {
-								reference_doctype: me.frm.doctype,
-								reference_name: me.frm.docname,
-								content: __('Reason for Rejection: ') + data.reason,
-								comment_email: frappe.session.user,
-								comment_by: frappe.session.user_fullname
+								'doctype': 'Outward Bank Payment',
+								'docname': frm.doc.name
 							},
 							callback: function(r) {
-								if(!r.exc) {
-									frappe.call({
-										method: "bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.update_status",
-										freeze: true,
-										args: {
-											doctype_name: "Outward Bank Payment",
-											docname: frm.doc.name,
-											status: "Rejected"
-										},
-									callback: function(r) {
-										if(!r.exc) {
-										reject_dialog.hide();
-										frm.reload_doc();
-										}
-									}
+								if(r.message){
+									dialog_fields = [
+											{
+												fieldtype: "Password",
+												label: __("Transaction Password"),
+												fieldname: "transaction_password",
+												reqd: 1
+											},
+											{
+												fieldtype: "Int",
+												label: __("OTP"),
+												fieldname: "otp",
+												reqd: 1
+											}
+										]
+									show_dialog(frm, dialog_fields)
 								}
-									)
-								}
-							}
-						});
-					}
-				});
-				reject_dialog.show();
-		}).addClass("btn-danger");
+							}})}
+					   }
+				   }
+			   });
+		   }).addClass("btn-primary");		
 	}
 	},
 	company_bank_account: function(frm) {
@@ -296,3 +329,28 @@ frappe.ui.form.on('Outward Bank Payment', {
 	},
 
 });
+var show_dialog = function(frm, dialog_fields){
+	let d = new frappe.ui.Dialog({
+		title: __('Enter the Details'),
+		fields: dialog_fields,
+		primary_action: function() {
+		 let data = d.get_values();
+		 d.hide();
+		 frappe.call({
+			 method: 'bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.verify_and_initiate_transaction',
+			 args: {
+				 "doc":frm.doc,
+				 "entered_password": data.transaction_password,
+				 "otp": data.otp
+			 },
+			 freeze:true,
+			 callback: function(r) {
+				 if (r.message) {
+					 return
+				 }
+			 }
+		 });
+		}
+	});
+	d.show();
+}
