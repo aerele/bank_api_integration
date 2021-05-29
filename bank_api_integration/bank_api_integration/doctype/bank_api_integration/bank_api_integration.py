@@ -7,6 +7,7 @@ import frappe, json
 from six import string_types
 from frappe import _
 from frappe.model.document import Document
+import banking_api
 from banking_api.banking_api.common_provider import CommonProvider
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from frappe.permissions import add_permission, update_permission_property
@@ -53,7 +54,7 @@ def initiate_transaction_with_otp(doc, otp):
 		res = prov.initiate_transaction_with_otp(filters)
 		if res['status'] == 'SUCCESS' and 'utr_number' in res:
 			frappe.db.set_value('Outward Bank Payment',{'name':doc.name},'utr_number',res['utr_number'])
-			doc.reload()
+			frappe.db.set_value(doc.doctype,{'name':doc.name},'is_verified',1)
 			workflow_state = 'Initiated'
 		elif res['status'] in ['FAILURE', 'DUPLICATE']:
 			workflow_state = 'Initiation Failed'
@@ -66,14 +67,17 @@ def initiate_transaction_with_otp(doc, otp):
 	except:
 		workflow_state = 'Initiation Error'
 		res = frappe.get_traceback()
-	log_name = doc.log_request('Initiate Transaction with OTP', filters, config, res)
-	doc.save(ignore_permissions=True)
-	doc.reload()
+	log_name = log_request(doc.name, 'Initiate Transaction with OTP', filters, config, res)
+	if not workflow_state:
+		status = res['status']
+		frappe.throw(_(f'{status}'))
 	if workflow_state:
 		frappe.db.set_value('Outward Bank Payment', {'name': doc.name}, 'workflow_state', workflow_state)
+		frappe.db.commit()
 	if workflow_state in ['Initiation Error', 'Initiation Failed']:
 		if not doc.bobp:
 			frappe.throw(_(f'An error occurred while making request. Kindly check request log for more info {get_link_to_form("Bank API Request Log", log_name)}'))
+	return workflow_state
 
 def initiate_transaction_without_otp(doc):
 	if doc.workflow_state == 'Verified':
@@ -122,7 +126,7 @@ def initiate_transaction_without_otp(doc):
 		except:
 			workflow_state = 'Initiation Error'
 			res = frappe.get_traceback()
-		log_name = doc.log_request('Initiate Transaction without OTP', filters, config, res)
+		log_name = log_request(doc.name, 'Initiate Transaction without OTP', filters, config, res)
 		doc.save(ignore_permissions=True)
 		doc.reload()
 		if workflow_state:
@@ -137,10 +141,7 @@ def send_otp(doctype, docname):
 	res = None
 	doc = frappe.get_doc(doctype, docname)
 	prov, config = get_api_provider_class(doc.company_bank_account)
-	doc.retry_count += 1
-	doc.save(ignore_permissions=True)
-	doc.reload()
-	
+	frappe.db.set_value(doctype, docname, 'retry_count', doc.retry_count + 1)
 	filters = {
 		"UNIQUEID": doc.name,
 		"AMOUNT": str(doc.amount)
@@ -151,7 +152,7 @@ def send_otp(doctype, docname):
 			is_otp_sent = True
 	except:
 		res = frappe.get_traceback()
-	log_name = log_request('Send OTP', filters, config, res)
+	log_name = log_request(doc.name,'Send OTP', filters, config, res)
 	return is_otp_sent
 
 @frappe.whitelist()
@@ -208,15 +209,15 @@ def update_transaction_status(obp_name=None,bobp_name=None):
 def get_api_provider_class(company_bank_account):
 	integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': company_bank_account})
 	proxies = frappe.get_site_config().bank_api_integration['proxies']
-	config = {"APIKEY": integration_doc.get_password(fieldname="api_key"), 
+	config = {"APIKEY": integration_doc.get_password(fieldname="api_key") if integration_doc.api_key else None, 
 			"CORPID": integration_doc.corp_id,
 			"USERID": integration_doc.user_id,
 			"AGGRID":integration_doc.aggr_id,
 			"AGGRNAME":integration_doc.aggr_name,
 			"URN": integration_doc.urn}
 	
-	file_paths = {'private_key': integration_doc.get_password(fieldname="private_key_path"),
-		'public_key': frappe.local.site_path + integration_doc.public_key_attachment}
+	file_paths = {'private_key': integration_doc.get_password(fieldname="private_key_path") if integration_doc.private_key_path else None,
+		'public_key': frappe.local.site_path + integration_doc.public_key_attachment if integration_doc.public_key_attachment else None}
 	
 	prov = CommonProvider(integration_doc.bank_api_provider, config, integration_doc.use_sandbox, proxies, file_paths, frappe.local.site_path)
 	return prov, config
@@ -336,9 +337,9 @@ def is_authorized(new_doc):
 		if diff:
 			for changed in diff.changed:
 				field, old, new = changed
-				if field in ['is_verified']:
+				if field in ['is_verified', 'retry_count']:
 					frappe.throw('Unauthorized Access')
-	elif new_doc.is_verified:
+	elif new_doc.is_verified or new_doc.retry_count:
 		frappe.throw('Unauthorized Access')
 	else:
 		return
@@ -370,8 +371,8 @@ def get_transaction_type(bank_account):
 @frappe.whitelist()
 def get_field_status(bank_account):
 	enable_otp_based_transaction = frappe.get_site_config().bank_api_integration['enable_otp_based_transaction']
-	acc_num = frappe.db.get_value("Bank API Integration", {"bank_account": bank_account}, "account_number") 
-	is_pwd_security_enabled = frappe.db.get_value("Bank API Integration", {"bank_account": bank_account}, "enable_password_security")
+	acc_num = frappe.get_value("Bank API Integration", {"bank_account": bank_account}, "account_number") 
+	is_pwd_security_enabled = frappe.get_value("Bank API Integration", {"bank_account": bank_account}, "enable_password_security")
 	data = {}
 	if(enable_otp_based_transaction == '*' or acc_num in enable_otp_based_transaction):
 		data['is_otp_enabled'] = 1
@@ -383,3 +384,19 @@ def get_field_status(bank_account):
 def update_status(doctype_name,docname, status):
 	frappe.db.set_value(doctype_name, {'name': docname}, 'docstatus', 1)
 	frappe.db.set_value(doctype_name, {'name': docname}, 'workflow_state', status)
+
+@frappe.whitelist()
+def verify_and_initiate_transaction(doc, entered_password=None, otp=None):
+	if isinstance(doc, string_types):
+		doc = frappe._dict(json.loads(doc))
+	
+	if entered_password:
+		integration_doc_name = frappe.get_value('Bank API Integration',{'bank_account': doc['company_bank_account']},'name')
+		defined_password = frappe.utils.password.get_decrypted_password('Bank API Integration', integration_doc_name, fieldname='transaction_password')
+		if not entered_password == defined_password:
+			frappe.throw(_("Invalid Password"))
+	if otp:
+		if doc['doctype'] == 'Outward Bank Payment':
+			document = doc
+		workflow_state = initiate_transaction_with_otp(document, otp)
+		return workflow_state

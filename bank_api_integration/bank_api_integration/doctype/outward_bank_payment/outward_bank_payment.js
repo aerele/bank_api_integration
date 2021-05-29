@@ -7,7 +7,7 @@ frappe.ui.form.on('Outward Bank Payment', {
 		if (frm.doc.docstatus == 1 && ['Initiated', 'Initiation Pending', 'Transaction Pending'].includes(frm.doc.workflow_state)){ 
 			frm.add_custom_button(__("Update Transaction Status"), function() {
 			 frm.trigger('update_txn_status');
-		 });}
+		 }).addClass("btn-primary");}
 	},
 	before_workflow_action: function(frm){
 		if(frm.selected_workflow_action == 'Reject'){
@@ -60,7 +60,8 @@ frappe.ui.form.on('Outward Bank Payment', {
 		frm.trigger('verify_and_initiate_payment');
 	},
 	verify_and_initiate_payment: function(frm){
-		if(frappe.user.has_role('Bank Checker') && frm.doc.workflow_state == 'Approved'){
+		frm.reload_doc()
+		if(frappe.user.has_role('Bank Checker') && frm.doc.workflow_state == 'Approved' && frm.doc.retry_count < 3){
 			frm.add_custom_button(__("Verify and Initiate Payment"), function(){
 			let dialog_fields = [];
 			let bank_account = frm.doc.company_bank_account;
@@ -104,7 +105,8 @@ frappe.ui.form.on('Outward Bank Payment', {
 								'docname': frm.doc.name
 							},
 							callback: function(r) {
-								if(r.message){
+								if(r.message == true){
+									frappe.show_alert({message:__('OTP Sent Successfully'), indicator:'green'});
 									dialog_fields = [
 											{
 												fieldtype: "Password",
@@ -121,6 +123,9 @@ frappe.ui.form.on('Outward Bank Payment', {
 										]
 									show_dialog(frm, dialog_fields)
 								}
+							else{
+								frappe.show_alert({message:__('Unable to send OTP'), indicator:'red'});
+							}
 							}})}
 					   }
 				   }
@@ -344,9 +349,7 @@ var show_dialog = function(frm, dialog_fields){
 			 },
 			 freeze:true,
 			 callback: function(r) {
-				 if (r.message) {
-					 return
-				 }
+				frm.reload_doc();
 			 }
 		 });
 		}
