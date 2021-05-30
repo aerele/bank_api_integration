@@ -103,6 +103,7 @@
    "fieldtype": "Int",
    "hidden": 1,
    "label": "Retry Count",
+   "no_copy": 1,
    "read_only": 1
   },
   {
@@ -117,12 +118,13 @@
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Is Verified",
+   "no_copy": 1,
    "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-29 12:13:11.876745",
+ "modified": "2021-05-30 15:30:39.382933",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bulk Outward Bank Payment",

@@ -4,6 +4,9 @@
 frappe.ui.form.on('Outward Bank Payment', {
 	refresh: function(frm) {
 		frm.trigger('verify_and_initiate_payment');
+		if(frappe.user.has_role('Bank Maker')){
+		frm.set_df_property('retry_count', 'hidden', 1);
+		}
 		if (frm.doc.docstatus == 1 && ['Initiated', 'Initiation Pending', 'Transaction Pending'].includes(frm.doc.workflow_state)){ 
 			frm.add_custom_button(__("Update Transaction Status"), function() {
 			 frm.trigger('update_txn_status');

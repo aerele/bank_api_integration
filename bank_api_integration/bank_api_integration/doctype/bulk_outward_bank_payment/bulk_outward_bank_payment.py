@@ -3,13 +3,14 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
-from bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration import is_authorized
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, get_link_to_form
+from frappe.utils import flt
 from frappe.model.mapper import get_mapped_doc
-
+from frappe.core.page.background_jobs.background_jobs import get_info
+from frappe.utils.background_jobs import enqueue
+from bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration import *
 class BulkOutwardBankPayment(Document):
 	def on_update(self):
 		is_authorized(self)
@@ -45,10 +46,59 @@ class BulkOutwardBankPayment(Document):
 	def validate(self):
 		total_payment_amount = 0
 		for row in self.outward_bank_payment_details:
+			row.remarks = self.remarks
 			total_payment_amount+=flt(row.amount)
 		self.total_payment_amount = total_payment_amount
 		self.no_of_payments = len(self.outward_bank_payment_details)
 
+	def bulk_create_obp_records(self):
+		enqueued_jobs = [d.get("job_name") for d in get_info()]
+		if self.name in enqueued_jobs:
+			frappe.throw(
+				_("OBP record creation already in progress. Please wait for sometime.")
+			)
+		else:
+			enqueue(
+				create_obp_records,
+				queue="default",
+				timeout=6000,
+				event="obp_record_creation",
+				job_name=self.name,
+				doc = self
+			)
+			frappe.throw(
+				_("OBP record creation job added to queue. Please check after sometime.")
+			)
+
+def create_obp_records(doc):
+	for row in doc.outward_bank_payment_details:
+		if row.index == 0:
+			continue
+		try:
+			data = {
+			'party_type': row['party_type'],
+			'party': row['party'],
+			'amount': row['amount'],
+			'remarks': doc['remarks'],
+			'transaction_type': doc['transaction_type'],
+			'company_bank_account': doc['company_bank_account'],
+			'reconcile_action': doc['reconcile_action'],
+			'bobp': doc['name']}
+			if not frappe.db.exists('Outward Bank Payment', data):
+				data['doctype'] = 'Outward Bank Payment'
+				obp_doc = frappe.get_doc(data)
+				obp_doc.save(ignore_permissions=True)
+				obp_doc.submit()
+				status = frappe.db.get_value('Outward Bank Payment', obp_doc.name, 'workflow_state')
+				frappe.db.set_value('Outward Bank Payment Details',{'parent':doc['name'],
+					'party_type': row['party_type'],
+					'party': row['party'],
+					'amount': row['amount']},'outward_bank_payment',obp_doc.name)
+				initiate_transaction_without_otp(obp_doc.name)
+			frappe.db.commit()
+		except:
+			error_message = frappe.get_traceback()+"\n\n BOBP Name: \n"+ doc.name
+			frappe.log_error(error_message, "OBP Record Creation Error")
 
 @frappe.whitelist()
 def recreate_failed_transaction(source_name, target_doc=None):

@@ -8,7 +8,6 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import today
 from six import string_types
-from frappe.utils import get_link_to_form
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_negative_outstanding_invoices, get_orders_to_be_billed
 from erpnext.controllers.accounts_controller import get_supplier_block_status
 from erpnext.accounts.utils import get_outstanding_invoices, get_account_currency
@@ -37,7 +36,7 @@ class OutwardBankPayment(Document):
 							'party_type': self.party_type,
 							'party': self.party,
 							'amount': self.amount,
-							'outward_bank_payment': get_link_to_form('Outward Bank Payment', self.name)},'status', self.workflow_state)
+							'outward_bank_payment': self.name},'status', self.workflow_state)
 			frappe.db.commit()
 		if self.reconcile_action == 'Auto Reconcile Oldest First Invoice' and self.workflow_state == 'Transaction Completed':
 			references = []
