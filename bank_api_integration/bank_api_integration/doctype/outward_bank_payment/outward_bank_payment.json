@@ -182,13 +182,14 @@
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Is Verified",
+   "no_copy": 1,
    "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-29 13:48:15.642367",
+ "modified": "2021-05-29 17:23:46.094297",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Outward Bank Payment",
