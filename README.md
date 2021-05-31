@@ -101,6 +101,6 @@ Add the below details to the ```site_config.json``` of the site that has Bank AP
 
 3. Adding proxies will allow making API requests from different IP's.
 
-** Note: Malicious activities can be avoided by disabling the server script for the site that has Bank API Integration.
+** Note: To reduce the attack surface it is recommended to disable the server script for the site that has Bank API Integration.
 
 ### Show some ❤️ by starring :star: :arrow_up: our repo!
