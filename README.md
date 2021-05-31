@@ -7,7 +7,7 @@ Reach us out at hello@aerele.in to connect with our team.
 
 GNU/General Public License (v3) (see [license.txt](license.txt))
 
-The Apparelo code is licensed as GNU General Public License (v3) and the copyright is owned by Aerele Technologies Pvt Ltd (Aerele) and Contributors.
+The Banking API Integration code is licensed as GNU General Public License (v3) and the copyright is owned by Aerele Technologies Pvt Ltd (Aerele) and Contributors.
 
 Here, OBP means ```Outward bank payment``` and BOBP means ```Bulk outward bank payment```
 
