@@ -81,7 +81,7 @@ def initiate_transaction_without_otp(docname):
 
 	res = None
 	currency = frappe.db.get_value("Company", doc.company, "default_currency")
-	prov, config = doc.get_api_provider_class(doc.company_bank_account)
+	prov, config = get_api_provider_class(doc.company_bank_account)
 	filters = {
 		"REMARKS": doc.remarks,
 		"UNIQUEID": doc.name,
@@ -213,8 +213,6 @@ def update_transaction_status(obp_name=None,bobp_name=None):
 			res = frappe.get_traceback()
 		
 		log_name = log_request(obp_doc.name,'Update Transaction Status', filters, config, res)
-		obp_doc.save(ignore_permissions=True)
-		obp_doc.reload()
 		frappe.db.set_value('Outward Bank Payment', {'name': obp_doc.name}, 'workflow_state', workflow_state)
 		frappe.db.commit()
 		if workflow_state in ['Transaction Pending', 'Transaction Error', 'Transaction Failed'] and not bulk_update:
@@ -471,7 +469,7 @@ def verify_and_initiate_transaction(doc, entered_password=None, otp=None):
 	if workflow_state == 'Approved' and retry_count == 3:
 		frappe.db.set_value(doc.doctype, doc.name, 'workflow_state', 'Verification Failed')
 
-	if workflow_state == 'Initiated':
+	if workflow_state in ['Initiated', 'Initiation Pending']:
 		if doc['doctype'] == 'Bulk Outward Bank Payment':
 			bobp = frappe.get_doc('Bulk Outward Bank Payment', doc['name'])
 			bobp.bulk_create_obp_records()

@@ -12,13 +12,15 @@
   "column_break_7",
   "company_bank_account",
   "transaction_type",
+  "retry_count",
   "section_break_4",
   "outward_bank_payment_details",
+  "section_break_9",
   "no_of_payments",
+  "total_payment_amount",
+  "column_break_10",
   "remarks",
   "reason_for_rejection",
-  "total_payment_amount",
-  "retry_count",
   "is_verified",
   "amended_from"
  ],
@@ -120,11 +122,19 @@
    "label": "Is Verified",
    "no_copy": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_9",
+   "fieldtype": "Section Break"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-30 15:30:39.382933",
+ "modified": "2021-05-31 14:54:39.664177",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bulk Outward Bank Payment",

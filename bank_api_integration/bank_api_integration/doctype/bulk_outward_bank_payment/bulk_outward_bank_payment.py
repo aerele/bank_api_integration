@@ -72,25 +72,26 @@ class BulkOutwardBankPayment(Document):
 
 def create_obp_records(doc):
 	for row in doc.outward_bank_payment_details:
-		if row.index == 0:
+		row = vars(row)
+		if row['idx'] == 0:
 			continue
 		try:
 			data = {
 			'party_type': row['party_type'],
 			'party': row['party'],
 			'amount': row['amount'],
-			'remarks': doc['remarks'],
-			'transaction_type': doc['transaction_type'],
-			'company_bank_account': doc['company_bank_account'],
-			'reconcile_action': doc['reconcile_action'],
-			'bobp': doc['name']}
+			'remarks': doc.remarks,
+			'transaction_type': doc.transaction_type,
+			'company_bank_account': doc.company_bank_account,
+			'reconcile_action': doc.reconcile_action,
+			'bobp': doc.name}
 			if not frappe.db.exists('Outward Bank Payment', data):
 				data['doctype'] = 'Outward Bank Payment'
 				obp_doc = frappe.get_doc(data)
 				obp_doc.save(ignore_permissions=True)
 				obp_doc.submit()
 				status = frappe.db.get_value('Outward Bank Payment', obp_doc.name, 'workflow_state')
-				frappe.db.set_value('Outward Bank Payment Details',{'parent':doc['name'],
+				frappe.db.set_value('Outward Bank Payment Details',{'parent':doc.name,
 					'party_type': row['party_type'],
 					'party': row['party'],
 					'amount': row['amount']},'outward_bank_payment',obp_doc.name)
