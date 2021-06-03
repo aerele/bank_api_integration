@@ -6,18 +6,39 @@ from __future__ import unicode_literals
 import frappe, json
 from frappe import _
 from frappe.model.document import Document
-import banking_api
-from banking_api.common_provider import CommonProvider
 from frappe.utils import today
 from six import string_types
-from frappe.utils import get_site_path
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_negative_outstanding_invoices, get_orders_to_be_billed
 from erpnext.controllers.accounts_controller import get_supplier_block_status
 from erpnext.accounts.utils import get_outstanding_invoices, get_account_currency
 from frappe.utils import add_months, nowdate
+from bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration import is_authorized
 class OutwardBankPayment(Document):
+	def on_update(self):
+		is_authorized(self)
 	def on_change(self):
-		if self.reconcile_action == 'Auto Reconcile Oldest First Invoice' and self.status == 'Transaction Completed':
+		if self.bobp and not self.workflow_state == 'Pending':
+			status = 'Processing'
+			failed_doc_count = frappe.db.count('Outward Bank Payment', {'bobp': self.bobp, 'workflow_state': ['in',  ['Initiation Failed','Initiation Error', 'Transaction Error', 'Transaction Failed']]})
+			completed_doc_count = frappe.db.count('Outward Bank Payment', {'bobp': self.bobp, 'workflow_state': 'Transaction Completed'})
+			initiated_doc_count = frappe.db.count('Outward Bank Payment', {'bobp': self.bobp, 'workflow_state': 'Initiated'})
+			total_payments = frappe.db.get_value('Bulk Outward Bank Payment', {'name': self.bobp}, 'no_of_payments')
+			if initiated_doc_count == total_payments:
+				status = 'Initiated'
+			if failed_doc_count and not completed_doc_count:
+				status = 'Failed'
+			if completed_doc_count>=1:
+				status = 'Partially Completed'
+			if completed_doc_count == total_payments:
+				status = 'Completed' 
+			frappe.db.set_value('Bulk Outward Bank Payment', {'name': self.bobp}, 'workflow_state', status)
+			frappe.db.set_value('Outward Bank Payment Details',{'parent':self.bobp,
+							'party_type': self.party_type,
+							'party': self.party,
+							'amount': self.amount,
+							'outward_bank_payment': self.name},'status', self.workflow_state)
+			frappe.db.commit()
+		if self.reconcile_action == 'Auto Reconcile Oldest First Invoice' and self.workflow_state == 'Transaction Completed':
 			references = []
 			amount = self.amount
 			month_threshold = -6
@@ -34,7 +55,7 @@ class OutwardBankPayment(Document):
 					})
 					amount-= inv['grand_total']
 			self.create_payment_entry(references)
-		if self.reconcile_action == 'Manual Reconcile' and self.status == 'Transaction Completed':
+		if self.reconcile_action == 'Manual Reconcile' and self.workflow_state == 'Transaction Completed':
 			references = []
 			for row in self.payment_references:
 				references.append({
@@ -69,124 +90,6 @@ class OutwardBankPayment(Document):
 		self.payment_entry = payment_entry.name
 		self.save()
 		self.reload()
-
-	def on_submit(self):
-		if self.workflow_state == 'Approved':
-			res = None
-			currency = frappe.db.get_value("Company", self.company, "default_currency")
-			prov, config = self.get_api_provider_class()
-			integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': self.company_bank_account})
-			filters = {
-				"UNIQUEID": self.name,
-				"IFSC": frappe.db.get_value('Bank Account', 
-						{'party_type': self.party_type,
-						'party': self.party,
-						'is_default': 1
-						},'ifsc_code'),
-				"AMOUNT": str(self.amount),
-				"CURRENCY": currency,
-				"TXNTYPE": self.transaction_type,
-				"PAYEENAME": self.party,
-				"DEBITACC": integration_doc.account_number,
-				"CREDITACC": frappe.db.get_value('Bank Account', 
-						{'party_type': self.party_type,
-						'party': self.party,
-						'is_default': 1
-						},'bank_account_no')
-			}
-			try:
-				res = prov.initiate_transaction_without_otp(filters)
-				if type(res) == str:
-					self.status = 'Initiation Error'
-					self.workflow_state = 'Initiation Error'
-				else:
-					if res['STATUS'] == 'SUCCESS':
-						self.status = 'Initiated'
-						self.workflow_state = 'Initiated'
-					if res['STATUS'] == 'FAILURE':
-						self.status = 'Initiation Failed'
-						self.workflow_state = 'Initiation Failed'
-			except:
-				self.status = 'Initiation Error'
-				self.workflow_state = 'Initiation Error'
-				res = frappe.get_traceback()
-			log_name = self.log_request('Initiate Transaction without OTP', filters, config, res)
-			self.save()
-			self.reload()
-			if self.status in ['Initiation Error', 'Initiation Failed']:
-				if not self.bobp:
-					frappe.throw(_(f'Kindly check request log for more info {log_name}'))
-
-	def get_api_provider_class(self):
-		integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': self.company_bank_account})
-		proxies = frappe.get_site_config().proxies
-		config = {"APIKEY": integration_doc.get_password(fieldname="api_key"), 
-				"CORPID": integration_doc.corp_id,
-				"USERID": integration_doc.user_id,
-				"AGGRID":integration_doc.aggr_id,
-				"AGGRNAME":integration_doc.aggr_name,
-				"URN": integration_doc.urn}
-		
-		file_paths = {'private_key': integration_doc.get_password(fieldname="private_key_path"),
-			'public_key': frappe.local.site_path + integration_doc.public_key_attachment}
-		
-		prov = CommonProvider(integration_doc.bank_api_provider, config, integration_doc.use_sandbox, proxies, file_paths, frappe.local.site_path)
-		return prov, config
-
-	def log_request(self, api_method, filters, config, res):
-		request_log = frappe.get_doc({
-			"doctype": "Bank API Request Log",
-			"user": frappe.session.user,
-			"reference_document": self.name,
-			"api_method": api_method,
-			"filters": str(filters) if filters else None,
-			"config_details": str(config),
-			"response": res
-		})
-		request_log.save(ignore_permissions=True)
-		frappe.db.commit()
-		return request_log.name
-
-@frappe.whitelist()
-def update_transaction_status(obp_name=None,bobp_name=None):
-	if obp_name:
-		obp_list = {'name': obp_name}
-	if bobp_name:
-		obp_list = frappe.db.get_all('Outward Bank Payment', {'status': ['=', 'Initiated'], 'bobp': ['=', bobp_name]})
-
-	for doc in obp_list:
-		res = None
-		obp_doc = frappe.get_doc('Outward Bank Payment', doc['name'])
-		currency = frappe.db.get_value("Company", obp_doc.company, "default_currency")
-		prov, config = obp_doc.get_api_provider_class()
-		integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': obp_doc.company_bank_account})
-		filters = {"UNIQUEID": obp_doc.name}
-		try:
-			res = prov.get_transaction_status(filters)
-			if type(res) == str:
-				obp_doc.status = 'Transaction Error'
-				obp_doc.workflow_state = 'Transaction Error'
-			else:
-				if res['STATUS'] == 'SUCCESS':
-					obp_doc.status = 'Transaction Completed'
-					obp_doc.workflow_state = 'Transaction Completed'
-				if res['STATUS'] in ['FAILURE', 'DUPLICATE']:
-					obp_doc.status = 'Transaction Failed'
-					obp_doc.workflow_state = 'Transaction Failed'
-				if res['STATUS'] in ['PENDING', 'Pending For Processing']:
-					obp_doc.status = 'Transaction Pending'
-					obp_doc.workflow_state = 'Transaction Pending'
-		except:
-			obp_doc.status = 'Transaction Error'
-			obp_doc.workflow_state = 'Transaction Error'
-			res = frappe.get_traceback()
-		
-		log_name = obp_doc.log_request('Update Transaction Status', filters, config, res)
-		obp_doc.save()
-		obp_doc.reload()
-		if obp_doc.status in ['Transaction Pending', 'Transaction Error', 'Transaction Failed']:
-			if not obp_doc.bobp:
-				frappe.throw(_(f'Kindly check request log for more info {log_name}'))
 
 @frappe.whitelist()
 def get_outstanding_reference_documents(args):

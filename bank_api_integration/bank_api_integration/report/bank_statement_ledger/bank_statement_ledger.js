@@ -31,17 +31,17 @@ frappe.query_reports["Bank Statement Ledger"] = {
 	],
 	onload: function(frm)
 	{
-	frappe.call({
-	method: "bank_api_integration.bank_api_integration.doctype.bank_api_integration_settings.bank_api_integration_settings.fetch_balance",
-	freeze: true,
-	callback: function(r) {
-		if(r.message) {
-		frappe.query_report.set_filter_value('account_no',r.message['account_no']);
-		frappe.query_report.set_filter_value('date',r.message['date']);
-		frappe.query_report.set_filter_value('balance',r.message['balance']);
-		frappe.query_report.set_filter_value('currency',r.message['currency']);
-		}
-	}
-		});
+	// frappe.call({
+	// method: "bank_api_integration.bank_api_integration.doctype.bank_api_integration_settings.bank_api_integration_settings.fetch_balance",
+	// freeze: true,
+	// callback: function(r) {
+	// 	if(r.message) {
+	// 	frappe.query_report.set_filter_value('account_no',r.message['account_no']);
+	// 	frappe.query_report.set_filter_value('date',r.message['date']);
+	// 	frappe.query_report.set_filter_value('balance',r.message['balance']);
+	// 	frappe.query_report.set_filter_value('currency',r.message['currency']);
+	// 	}
+	// }
+	// 	});
 	}
 };

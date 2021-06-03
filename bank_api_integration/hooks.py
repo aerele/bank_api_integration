@@ -59,7 +59,7 @@ app_license = "MIT"
 # ------------
 
 # before_install = "bank_api_integration.install.before_install"
-after_install = "bank_api_integration.bank_api_integration.doctype.bank_api_integration_settings.bank_api_integration_settings.create_defaults"
+after_install = "bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.create_defaults"
 
 # Desk Notifications
 # ------------------
@@ -105,9 +105,9 @@ after_install = "bank_api_integration.bank_api_integration.doctype.bank_api_inte
 scheduler_events = {
 	"cron": {
 		"0/30 * * * *": [
-			"bank_api_integration.bank_api_integration.doctype.bank_api_integration_settings.bank_api_integration_settings.sync_transactions"
+		"bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.update_transaction_status"
 		]
-	},
+	}
 }
 # 	"all": [
 # 		"bank_api_integration.tasks.all"
@@ -148,5 +148,3 @@ scheduler_events = {
 # exempt linked doctypes from being automatically cancelled
 #
 # auto_cancel_exempted_doctypes = ["Auto Repeat"]
-
-page_js = {"bank-reconciliation" : "public/js/bank_reconciliation.js"}

@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_copy": 1,
  "autoname": "format:OBP{YYYY}{MM}{####}",
  "creation": "2021-03-11 13:09:41.879350",
  "doctype": "DocType",
@@ -11,18 +12,23 @@
   "column_break_3",
   "company_bank_account",
   "transaction_type",
+  "retry_count",
   "section_break_4",
   "party_type",
+  "party",
   "amount",
   "column_break_9",
-  "party",
+  "remarks",
+  "reason_for_rejection",
   "section_break_11",
   "bobp",
   "payment_entry",
-  "status",
+  "column_break_15",
+  "utr_number",
   "reconcile_section",
   "get_outstanding_invoice",
   "payment_references",
+  "is_verified",
   "amended_from"
  ],
  "fields": [
@@ -50,19 +56,10 @@
    "reqd": 1
   },
   {
-   "allow_on_submit": 1,
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "hidden": 1,
-   "in_list_view": 1,
-   "label": "Status",
-   "no_copy": 1,
-   "options": "\nPending\nApproved\nRejected\nInitiation Error\nInitiation Failed\nInitiated\nTransaction Error\nTransaction Pending\nTransaction Failed\nTransaction Completed"
-  },
-  {
    "fieldname": "bobp",
    "fieldtype": "Link",
    "label": "Bulk Outward Bank Payment",
+   "no_copy": 1,
    "options": "Bulk Outward Bank Payment",
    "read_only": 1
   },
@@ -110,6 +107,7 @@
   {
    "fieldname": "company_bank_account",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Company Bank Account",
    "options": "Bank Account",
    "reqd": 1
@@ -117,7 +115,7 @@
   {
    "fieldname": "section_break_4",
    "fieldtype": "Section Break",
-   "label": "Party Details"
+   "label": "Payment Details"
   },
   {
    "fieldname": "column_break_3",
@@ -127,7 +125,6 @@
    "fieldname": "transaction_type",
    "fieldtype": "Select",
    "label": "Transaction Type",
-   "options": "\nRTG\nRGS\nIFS\nOWN\nTPA\nVAP",
    "reqd": 1
   },
   {
@@ -145,17 +142,72 @@
    "label": "Payment Entry",
    "options": "Payment Entry",
    "read_only": 1
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "utr_number",
+   "fieldtype": "Data",
+   "label": "UTR Number",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Maximum of 3 retries only allowed.",
+   "fieldname": "retry_count",
+   "fieldtype": "Int",
+   "label": "Retry Count",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "reason_for_rejection",
+   "fieldtype": "Small Text",
+   "label": "Reason for Rejection",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_verified",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is Verified",
+   "no_copy": 1,
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-04-26 16:22:34.594125",
+ "modified": "2021-05-29 17:23:46.094297",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Outward Bank Payment",
  "owner": "Administrator",
  "permissions": [
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bank Checker",
+   "select": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
   {
    "create": 1,
    "delete": 1,
@@ -164,7 +216,8 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "System Manager",
+   "role": "Bank Maker",
+   "select": 1,
    "share": 1,
    "write": 1
   }

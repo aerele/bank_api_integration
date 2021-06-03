@@ -1,32 +1,30 @@
 {
  "actions": [],
+ "allow_copy": 1,
  "autoname": "format:BOBP{YYYY}{MM}{####}",
  "creation": "2021-03-11 15:59:34.364295",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "status",
   "company",
   "reconcile_action",
   "column_break_7",
   "company_bank_account",
   "transaction_type",
+  "retry_count",
   "section_break_4",
   "outward_bank_payment_details",
+  "section_break_9",
   "no_of_payments",
   "total_payment_amount",
+  "column_break_10",
+  "remarks",
+  "reason_for_rejection",
+  "is_verified",
   "amended_from"
  ],
  "fields": [
-  {
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "hidden": 1,
-   "label": "Status",
-   "options": "\nPending\nApproved\nRejected",
-   "read_only": 1
-  },
   {
    "allow_bulk_edit": 1,
    "fieldname": "outward_bank_payment_details",
@@ -57,6 +55,7 @@
    "fieldname": "no_of_payments",
    "fieldtype": "Int",
    "label": "No of Payments",
+   "no_copy": 1,
    "read_only": 1
   },
   {
@@ -70,6 +69,7 @@
    "fieldname": "total_payment_amount",
    "fieldtype": "Currency",
    "label": "Total Payment Amount",
+   "no_copy": 1,
    "read_only": 1
   },
   {
@@ -91,18 +91,68 @@
    "fieldname": "transaction_type",
    "fieldtype": "Select",
    "label": "Transaction Type",
-   "options": "\nRTG\nRGS\nIFS\nOWN\nTPA\nVAP",
    "reqd": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "retry_count",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Retry Count",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "reason_for_rejection",
+   "fieldtype": "Small Text",
+   "label": "Reason for Rejection",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_verified",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is Verified",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_9",
+   "fieldtype": "Section Break"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-04-26 13:56:20.536791",
+ "modified": "2021-05-31 14:54:39.664177",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bulk Outward Bank Payment",
  "owner": "Administrator",
  "permissions": [
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bank Checker",
+   "select": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
   {
    "create": 1,
    "delete": 1,
@@ -111,7 +161,8 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "System Manager",
+   "role": "Bank Maker",
+   "select": 1,
    "share": 1,
    "write": 1
   }

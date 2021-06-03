@@ -63,7 +63,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-03-24 00:17:14.904713",
+ "modified": "2021-05-29 14:02:55.741754",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bank API Request Log",
@@ -77,6 +77,10 @@
    "report": 1,
    "role": "System Manager",
    "share": 1
+  },
+  {
+   "read": 1,
+   "role": "Bank Checker"
   }
  ],
  "sort_field": "modified",
