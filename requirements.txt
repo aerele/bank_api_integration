@@ -1,1 +1,2 @@
 frappe
+git+https://github.com/aerele/bankingapi.git@master#egg=banking_api

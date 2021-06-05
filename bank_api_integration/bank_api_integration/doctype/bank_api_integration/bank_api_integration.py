@@ -7,7 +7,6 @@ import frappe, json
 from six import string_types
 from frappe import _
 from frappe.model.document import Document
-import banking_api
 from banking_api.banking_api.common_provider import CommonProvider
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from frappe.permissions import add_permission, update_permission_property
