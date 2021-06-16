@@ -209,3 +209,8 @@ var show_dialog = function(frm, dialog_fields){
 	});
 	d.show();
 }
+cur_frm.fields_dict.outward_bank_payment_details.grid.get_field("party_type").get_query  = function () {
+	return {
+		query: "erpnext.setup.doctype.party_type.party_type.get_party_type",
+	};
+}

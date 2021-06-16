@@ -2,6 +2,13 @@
 // For license information, please see license.txt
 {% include 'bank_api_integration/bank_api_integration/utils/common_fields.js' %};
 frappe.ui.form.on('Outward Bank Payment', {
+	setup: function(frm) {
+		frm.set_query("party_type", function() {
+			return {
+				query: "erpnext.setup.doctype.party_type.party_type.get_party_type",
+			};
+		});
+	},
 	refresh: function(frm) {
 		frm.trigger('verify_and_initiate_payment');
 		if(frappe.user.has_role('Bank Maker')){
