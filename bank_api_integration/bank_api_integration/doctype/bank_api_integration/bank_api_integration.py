@@ -19,7 +19,6 @@ class BankAPIIntegration(Document):
 def initiate_transaction_with_otp(docname, otp):
 	doc = frappe.get_doc('Outward Bank Payment', docname)
 	workflow_state = None
-	integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': doc.company_bank_account})
 
 	res = None
 	currency = frappe.db.get_value("Company", doc.company, "default_currency")
@@ -38,7 +37,10 @@ def initiate_transaction_with_otp(docname, otp):
 		"CURRENCY": currency,
 		"TXNTYPE": doc.transaction_type,
 		"PAYEENAME": doc.party,
-		"DEBITACC": integration_doc.account_number,
+		"DEBITACC": frappe.db.get_value('Bank Account', 
+					{
+					'name': doc.company_bank_account
+					},'bank_account_no'),
 		"CREDITACC": frappe.db.get_value('Bank Account', 
 				{'party_type': doc.party_type,
 				'party': doc.party,
@@ -76,7 +78,6 @@ def initiate_transaction_with_otp(docname, otp):
 def initiate_transaction_without_otp(docname):
 	doc = frappe.get_doc('Outward Bank Payment', docname)
 	workflow_state = None
-	integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': doc.company_bank_account})
 
 	res = None
 	currency = frappe.db.get_value("Company", doc.company, "default_currency")
@@ -93,7 +94,10 @@ def initiate_transaction_without_otp(docname):
 		"CURRENCY": currency,
 		"TXNTYPE": doc.transaction_type,
 		"PAYEENAME": doc.party,
-		"DEBITACC": integration_doc.account_number,
+		"DEBITACC": frappe.db.get_value('Bank Account', 
+					{
+					'name': doc.company_bank_account
+					},'bank_account_no'),
 		"CREDITACC": frappe.db.get_value('Bank Account', 
 				{'party_type': doc.party_type,
 				'party': doc.party,
@@ -236,7 +240,7 @@ def get_api_provider_class(company_bank_account):
 			"URN": integration_doc.urn}
 	
 	file_paths = {'private_key': integration_doc.get_password(fieldname="private_key_path") if integration_doc.private_key_path else None,
-		'public_key': frappe.local.site_path + integration_doc.public_key_attachment if integration_doc.public_key_attachment else None}
+		'public_key': frappe.local.site_path + integration_doc.icici_public_key if integration_doc.icici_public_key else None}
 	
 	prov = CommonProvider(integration_doc.bank_api_provider, config, integration_doc.use_sandbox, proxies, file_paths, frappe.local.site_path)
 	return prov, config
@@ -390,7 +394,7 @@ def get_transaction_type(bank_account):
 @frappe.whitelist()
 def get_field_status(bank_account):
 	enable_otp_based_transaction = frappe.get_site_config().bank_api_integration['enable_otp_based_transaction']
-	acc_num = frappe.get_value("Bank API Integration", {"bank_account": bank_account}, "account_number") 
+	acc_num = frappe.get_value('Bank Account', {'name': bank_account},'bank_account_no')
 	is_pwd_security_enabled = frappe.get_value("Bank API Integration", {"bank_account": bank_account}, "enable_password_security")
 	disabled_accounts = frappe.get_site_config().bank_api_integration['disable_transaction']
 	data = {}

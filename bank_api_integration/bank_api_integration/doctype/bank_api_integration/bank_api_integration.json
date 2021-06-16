@@ -19,11 +19,9 @@
   "aggr_name",
   "urn",
   "column_break_4",
-  "ifsc",
-  "account_number",
   "api_key",
   "private_key_path",
-  "public_key_attachment",
+  "icici_public_key",
   "transaction_details_section",
   "enable_transaction",
   "column_break_20",
@@ -107,18 +105,6 @@
    "mandatory_depends_on": "eval:in_list([\"ICICI\"], doc.bank_api_provider)"
   },
   {
-   "fieldname": "ifsc",
-   "fieldtype": "Data",
-   "label": "IFSC",
-   "mandatory_depends_on": "bank_api_provider"
-  },
-  {
-   "fieldname": "account_number",
-   "fieldtype": "Data",
-   "label": "Account Number",
-   "mandatory_depends_on": "bank_api_provider"
-  },
-  {
    "default": "0",
    "fieldname": "use_sandbox",
    "fieldtype": "Check",
@@ -128,13 +114,6 @@
   {
    "fieldname": "column_break_3",
    "fieldtype": "Column Break"
-  },
-  {
-   "depends_on": "eval:in_list([\"ICICI\"], doc.bank_api_provider)",
-   "fieldname": "public_key_attachment",
-   "fieldtype": "Attach",
-   "label": "Public Key Attachment",
-   "mandatory_depends_on": "eval:in_list([\"ICICI\"], doc.bank_api_provider)"
   },
   {
    "depends_on": "enable_password_security",
@@ -178,11 +157,18 @@
    "fieldtype": "Data",
    "label": "Unique ID",
    "mandatory_depends_on": "eval: doc.enable == 1 &&doc.use_sandbox == 1 && doc.bank_api_provider == 'Test'"
+  },
+  {
+   "depends_on": "eval:in_list([\"ICICI\"], doc.bank_api_provider)",
+   "fieldname": "icici_public_key",
+   "fieldtype": "Attach",
+   "label": "ICICI Public Key",
+   "mandatory_depends_on": "eval:in_list([\"ICICI\"], doc.bank_api_provider)"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-05-29 13:35:44.053456",
+ "modified": "2021-06-16 14:43:02.234132",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Bank API Integration",
