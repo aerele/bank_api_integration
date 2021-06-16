@@ -151,6 +151,7 @@ frappe.ui.form.on("Bulk Outward Bank Payment", {
 				args: {
 					"bank_account":frm.doc.company_bank_account
 				},
+				freeze: true,
 				callback: function(r) {
 					if (r.message) {
 						frm.set_df_property("transaction_type","options",r.message.join('\n'))
