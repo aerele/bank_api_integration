@@ -70,7 +70,6 @@ frappe.ui.form.on('Outward Bank Payment', {
 		frm.trigger('verify_and_initiate_payment');
 	},
 	verify_and_initiate_payment: function(frm){
-		frm.reload_doc()
 		if(frappe.user.has_role('Bank Checker') && frm.doc.workflow_state == 'Approved' && frm.doc.retry_count < 3){
 			frm.add_custom_button(__("Verify and Initiate Payment"), function(){
 			let dialog_fields = [];
@@ -341,9 +340,8 @@ frappe.ui.form.on('Outward Bank Payment', {
 
 		frm.refresh_fields()
 		frm.events.set_total_allocated_amount(frm);
-	},
-
-});
+	}
+})
 var show_dialog = function(frm, dialog_fields){
 	let d = new frappe.ui.Dialog({
 		title: __('Enter the Details'),

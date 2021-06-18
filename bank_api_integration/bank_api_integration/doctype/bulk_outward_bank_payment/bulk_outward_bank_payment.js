@@ -72,7 +72,6 @@ frappe.ui.form.on("Bulk Outward Bank Payment", {
 			frm.trigger('verify_and_initiate_payment');
 		},
 		verify_and_initiate_payment: function(frm){
-			frm.reload_doc()
 			if(frappe.user.has_role('Bank Checker') && frm.doc.workflow_state == 'Approved' && frm.doc.retry_count < 3){
 				frm.add_custom_button(__("Verify and Initiate Payment"), function(){
 				let dialog_fields = [];
