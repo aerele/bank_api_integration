@@ -321,7 +321,7 @@ def create_defaults():
 		"fieldtype": "Section Break",
 		"label": "Account Statement and Balance Details",
 		"insert_after" : "mask",
-		"depends_on": "eval: doc.is_company_account == 1"
+		"depends_on": "eval: doc.is_company_account == 1 && !doc.__islocal"
 	},
 	{
 		"fieldname": "fetch_balance",
