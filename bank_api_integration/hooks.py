@@ -105,7 +105,8 @@ after_install = "bank_api_integration.bank_api_integration.doctype.bank_api_inte
 scheduler_events = {
 	"cron": {
 		"0/30 * * * *": [
-		"bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.update_transaction_status"
+		"bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.update_transaction_status",
+		"bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.fetch_balance"
 		]
 	}
 }
@@ -148,3 +149,6 @@ scheduler_events = {
 # exempt linked doctypes from being automatically cancelled
 #
 # auto_cancel_exempted_doctypes = ["Auto Repeat"]
+doctype_js = {
+    "Bank Account": "bank_api_integration/utils/js/bank_account.js"
+}

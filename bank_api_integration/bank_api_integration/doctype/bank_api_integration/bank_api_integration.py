@@ -230,8 +230,14 @@ def update_transaction_status(obp_name=None,bobp_name=None):
 		frappe.msgprint(_("Transaction Status Updated"))
 
 def get_api_provider_class(company_bank_account):
-	integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': company_bank_account})
-	proxies = frappe.get_site_config().bank_api_integration['proxies']
+	config = frappe.get_site_config()
+	proxies = None
+	if not frappe.db.get_value('Bank API Integration', {'bank_account': company_bank_account, 'enable':1}):
+		frappe.throw(_(f'Kindly create bank api integration for this bank account {get_link_to_form("Bank Account", company_bank_account)}'))
+	integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': company_bank_account, 'enable':1})	
+	if 'bank_api_integration' in config:
+		proxies = config.bank_api_integration['proxies'] \
+			if 'proxies' in config.bank_api_integration else None
 	config = {"APIKEY": integration_doc.get_password(fieldname="api_key") if integration_doc.api_key else None, 
 			"CORPID": integration_doc.corp_id,
 			"USERID": integration_doc.user_id,
@@ -244,6 +250,39 @@ def get_api_provider_class(company_bank_account):
 	
 	prov = CommonProvider(integration_doc.bank_api_provider, config, integration_doc.use_sandbox, proxies, file_paths, frappe.local.site_path)
 	return prov, config
+
+@frappe.whitelist()
+def fetch_balance(bank_account = None):
+	account_list = []
+	
+	if not bank_account:
+		for acc in frappe.db.get_list('Bank Account', {'is_company_account': 1}):
+			account_list.append(acc['name'])
+	else:
+		account_list.append(bank_account)
+
+	for acc in account_list:
+		prov, config = get_api_provider_class(acc)
+		filters = {
+			"ACCOUNTNO": frappe.db.get_value('Bank Account',{'name':acc},'bank_account_no')
+		}
+		try:
+			res = prov.fetch_balance(filters)
+			doc = frappe.get_doc('Bank Account', acc)
+			if res['status'] == 'SUCCESS':
+				doc.db_set('balance_amount',res['balance'])
+				doc.db_set('balance_last_synced_on',res['date'])
+				doc.reload()
+		except:
+			res = frappe.get_traceback()
+		
+		log_name = log_request(bank_account, 'Fetch Balance', filters, config, res)
+		if 'status' in res:
+			if res['status']== 'FAILURE' and bank_account:
+				frappe.throw(_(f'Unable to fetch balance.Please check log {get_link_to_form("Bank API Request Log", log_name)} for more info.'))
+		else:
+			if bank_account:
+				frappe.throw(_(f'Unable to fetch balance.Please check log {get_link_to_form("Bank API Request Log", log_name)} for more info.'))
 
 def log_request(doc_name, api_method, filters, config, res):
 	request_log = frappe.get_doc({
@@ -277,8 +316,52 @@ def create_defaults():
 		"label": "IFSC Code",
 		"insert_after" : "iban"
 	},
-	]
+	{
+		"fieldname": "account_statemnt_and_balance_details",
+		"fieldtype": "Section Break",
+		"label": "Account Statement and Balance Details",
+		"insert_after" : "mask",
+		"depends_on": "eval: doc.is_company_account == 1"
+	},
+	{
+		"fieldname": "fetch_balance",
+		"fieldtype": "Button",
+		"label": "Fetch Balance",
+		"insert_after" : "account_statemnt_and_balance_details"
+	},
+	{
+		"fieldname": "balance_amount",
+		"fieldtype": "Float",
+		"label": "Balance Amount",
+		"insert_after" : "fetch_balance",
+		"read_only": 1
+	},
+	{
+		"fieldname": "balance_last_synced_on",
+		"fieldtype": "Datetime",
+		"label": "Balance Last Synced On",
+		"insert_after" : "balance_amount",
+		"read_only": 1
+	},
+	{
+		"fieldname": "column_break_30",
+		"fieldtype": "Column Break",
+		"insert_after" : "balance_last_synced_on"
+	},
+	{
+		"fieldname": "fetch_account_statement",
+		"fieldtype": "Button",
+		"label": "Fetch Account Statement",
+		"insert_after" : "column_break_30"
+	},
+	{
+		"fieldname": "statement_last_synced_on",
+		"fieldtype": "Datetime",
+		"label": "Statement Last Synced On",
+		"insert_after" : "fetch_account_statement",
+		"read_only": 1
 	}
+	]}
 	create_custom_fields(
 		custom_fields, ignore_validate=frappe.flags.in_patch, update=True)
 
@@ -300,48 +383,49 @@ def create_defaults():
 
 def create_workflow(document_name):
 	#Create default workflow
-	workflow_doc = frappe.get_doc({'doctype': 'Workflow',
-			'workflow_name': f'{document_name} Workflow',
-			'document_type': document_name,
-			'workflow_state_field': 'workflow_state',
-			'is_active': 1,
-			'send_email_alert':0})
+	if not frappe.db.exists('Workflow', f'{document_name} Workflow'):
+		workflow_doc = frappe.get_doc({'doctype': 'Workflow',
+				'workflow_name': f'{document_name} Workflow',
+				'document_type': document_name,
+				'workflow_state_field': 'workflow_state',
+				'is_active': 1,
+				'send_email_alert':0})
 
-	workflow_doc.append('states',{'state': 'Pending',
-				'doc_status': 0,
-				'update_field': 'workflow_state',
-				'update_value': 'Pending',
-				'allow_edit': 'Bank Maker'})
+		workflow_doc.append('states',{'state': 'Pending',
+					'doc_status': 0,
+					'update_field': 'workflow_state',
+					'update_value': 'Pending',
+					'allow_edit': 'Bank Maker'})
 
-	pending_next_states = [['Approve', 'Approved'], ['Reject', 'Rejected']]
-	for state in pending_next_states:
-		workflow_doc.append('states',{'state': state[1],
+		pending_next_states = [['Approve', 'Approved'], ['Reject', 'Rejected']]
+		for state in pending_next_states:
+			workflow_doc.append('states',{'state': state[1],
+						'doc_status': 1,
+						'update_field': 'workflow_state',
+						'update_value': state[1],
+						'allow_edit': 'Bank Checker'})
+			transitions = { 'state': 'Pending',
+							'action': state[0],
+							'allow_self_approval': 0,
+							'next_state': state[1],
+							'allowed': 'Bank Checker'}
+			workflow_doc.append('transitions',transitions)	
+		if document_name == 'Outward Bank Payment':
+			optional_states = ['Verified','Verification Failed','Initiated',
+					'Initiation Error', 'Initiation Failed', 'Transaction Failed', 'Initiation Pending',
+					'Transaction Error', 'Transaction Pending', 'Transaction Completed']
+		if document_name == 'Bulk Outward Bank Payment':
+			optional_states = ['Verified','Verification Failed','Initiated', 'Processing', 'Partially Completed', 'Completed', 'Failed']
+
+		for state in optional_states:
+			workflow_doc.append('states',{'state': state,
+					'is_optional_state': 1,
 					'doc_status': 1,
 					'update_field': 'workflow_state',
-					'update_value': state[1],
+					'update_value': state,
 					'allow_edit': 'Bank Checker'})
-		transitions = { 'state': 'Pending',
-						'action': state[0],
-						'allow_self_approval': 0,
-						'next_state': state[1],
-						'allowed': 'Bank Checker'}
-		workflow_doc.append('transitions',transitions)	
-	if document_name == 'Outward Bank Payment':
-		optional_states = ['Verified','Verification Failed','Initiated',
-				'Initiation Error', 'Initiation Failed', 'Transaction Failed', 'Initiation Pending',
-				'Transaction Error', 'Transaction Pending', 'Transaction Completed']
-	if document_name == 'Bulk Outward Bank Payment':
-		optional_states = ['Verified','Verification Failed','Initiated', 'Processing', 'Partially Completed', 'Completed', 'Failed']
 
-	for state in optional_states:
-		workflow_doc.append('states',{'state': state,
-				'is_optional_state': 1,
-				'doc_status': 1,
-				'update_field': 'workflow_state',
-				'update_value': state,
-				'allow_edit': 'Bank Checker'})
-
-	workflow_doc.save()
+		workflow_doc.save()
 
 def set_permissions_to_core_doctypes():
 	roles = ['Bank Checker', 'Bank Maker']
@@ -393,20 +477,25 @@ def get_transaction_type(bank_account):
 
 @frappe.whitelist()
 def get_field_status(bank_account):
-	enable_otp_based_transaction = frappe.get_site_config().bank_api_integration['enable_otp_based_transaction']
-	acc_num = frappe.get_value('Bank Account', {'name': bank_account},'bank_account_no')
-	is_pwd_security_enabled = frappe.get_value("Bank API Integration", {"bank_account": bank_account}, "enable_password_security")
-	disabled_accounts = frappe.get_site_config().bank_api_integration['disable_transaction']
+	config = frappe.get_site_config()
 	data = {}
+	if 'bank_api_integration' in config:
+		enable_otp_based_transaction = config.bank_api_integration['enable_otp_based_transaction'] \
+			if 'enable_otp_based_transaction' in config.bank_api_integration else None
+		acc_num = frappe.get_value('Bank Account', {'name': bank_account},'bank_account_no')
+		is_pwd_security_enabled = frappe.get_value("Bank API Integration", {"bank_account": bank_account}, "enable_password_security")
+		disabled_accounts = config.bank_api_integration['disable_transaction'] \
+			if 'disable_transaction' in config.bank_api_integration else None
+		if disabled_accounts and (disabled_accounts == '*' or acc_num in disabled_accounts):
+			frappe.throw(_(f'Unable to process transaction for the selected bank account. Please contact Administrator.'))
+			return
 
-	if disabled_accounts == '*' or acc_num in disabled_accounts:
-		frappe.throw(_(f'Unable to process transaction for the selected bank account. Please contact Administrator.'))
-		return
-
-	if(enable_otp_based_transaction == '*' or acc_num in enable_otp_based_transaction):
+		if enable_otp_based_transaction and (enable_otp_based_transaction == '*' or acc_num in enable_otp_based_transaction):
+			data['is_otp_enabled'] = 1
+		if is_pwd_security_enabled:
+			data['is_pwd_security_enabled'] = 1
+	else:
 		data['is_otp_enabled'] = 1
-	if(is_pwd_security_enabled):
-		data['is_pwd_security_enabled'] = 1
 	return data
 
 @frappe.whitelist()
