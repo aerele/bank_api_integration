@@ -11,7 +11,7 @@ from banking_api import CommonProvider
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from frappe.permissions import add_permission, update_permission_property
 from frappe.core.doctype.version.version import get_diff
-from frappe.utils import get_link_to_form
+from frappe.utils import getdate, now_datetime, get_link_to_form, nowdate
 
 class BankAPIIntegration(Document):
 	pass
@@ -233,7 +233,7 @@ def get_api_provider_class(company_bank_account):
 	config = frappe.get_site_config()
 	proxies = None
 	if not frappe.db.get_value('Bank API Integration', {'bank_account': company_bank_account, 'enable':1}):
-		frappe.throw(_(f'Kindly create bank api integration for this bank account {get_link_to_form("Bank Account", company_bank_account)}'))
+		frappe.throw(_(f'Kindly create and enable bank api integration for this bank account {get_link_to_form("Bank Account", company_bank_account)}'))
 	integration_doc = frappe.get_doc('Bank API Integration', {'bank_account': company_bank_account, 'enable':1})	
 	if 'bank_api_integration' in config:
 		proxies = config.bank_api_integration['proxies'] \
@@ -250,6 +250,22 @@ def get_api_provider_class(company_bank_account):
 	
 	prov = CommonProvider(integration_doc.bank_api_provider, config, integration_doc.use_sandbox, proxies, file_paths, frappe.local.site_path)
 	return prov, config
+
+def new_bank_transaction(transaction_list, bank_account):
+	for transaction in transaction_list:
+		if not frappe.db.exists("Bank Transaction", dict(transaction_id=transaction["txn_id"])):
+			new_transaction = frappe.get_doc({
+				'doctype': 'Bank Transaction',
+				'date': getdate(transaction['txn_date'].split(' ')[0]),
+				"transaction_id": transaction["txn_id"],
+				'withdrawal': abs(float(transaction['debit'].replace(',',''))) if transaction['debit'] else 0,
+				'deposit': abs(float(transaction['credit'].replace(',',''))) if transaction['credit'] else 0,
+				'description': transaction['remarks'],
+				'bank_account': bank_account
+			})
+			new_transaction.save()
+			new_transaction.submit()
+	return True
 
 @frappe.whitelist()
 def fetch_balance(bank_account = None):
@@ -273,16 +289,76 @@ def fetch_balance(bank_account = None):
 				doc.db_set('balance_amount',res['balance'])
 				doc.db_set('balance_last_synced_on',res['date'])
 				doc.reload()
+				frappe.msgprint(_("""Balance Updated"""))
 		except:
 			res = frappe.get_traceback()
 		
 		log_name = log_request(bank_account, 'Fetch Balance', filters, config, res)
-		if 'status' in res:
-			if res['status']== 'FAILURE' and bank_account:
+		if isinstance(res, dict):
+			if 'status' in res and res['status']== 'FAILURE' and bank_account:
 				frappe.throw(_(f'Unable to fetch balance.Please check log {get_link_to_form("Bank API Request Log", log_name)} for more info.'))
 		else:
 			if bank_account:
 				frappe.throw(_(f'Unable to fetch balance.Please check log {get_link_to_form("Bank API Request Log", log_name)} for more info.'))
+
+@frappe.whitelist()
+def fetch_account_statement(bank_account = None):
+	account_list = []
+	
+	if not bank_account:
+		for acc in frappe.db.get_list('Bank Account', {'is_company_account': 1}):
+			account_list.append(acc['name'])
+	else:
+		account_list.append(bank_account)
+
+	for acc in account_list:
+		prov, config = get_api_provider_class(acc)
+		try:
+			last_doc = frappe.get_last_doc("Bank Transaction", {'bank_account':acc})
+			from_date = last_doc.date
+			if not from_date:
+				from_date = nowdate()
+		except:
+			from_date = nowdate()
+		filters = {
+			"ACCOUNTNO": frappe.db.get_value('Bank Account',{'name':acc},'bank_account_no'),
+			"FROMDATE": from_date,
+			"TODATE": nowdate(),
+			"CONFLG": "N"
+		}
+		try:
+			res = prov.fetch_statement_with_pagination(filters)
+			doc = frappe.get_doc('Bank Account', acc)
+			if res['status'] == 'SUCCESS':
+				transaction_list = []
+				for transaction in res['record']:
+					credit = 0 
+					debit = 0
+					if transaction['TYPE'] == 'DR':
+						debit = transaction['AMOUNT']
+					if transaction['TYPE'] == 'CR':
+						credit = transaction['AMOUNT']
+
+					transaction_list.append({
+						'txn_id': transaction['TRANSACTIONID'],
+						'txn_date':transaction['TXNDATE'],
+						'debit': debit,
+						'credit': credit,
+						'remarks':transaction['REMARKS']
+					})
+				if new_bank_transaction(transaction_list, acc):
+					doc.db_set('statement_last_synced_on',now_datetime())
+					doc.reload()
+					frappe.msgprint(_("""Statements updated"""))
+		except:
+			res = frappe.get_traceback()
+		
+		log_name = log_request(bank_account, 'Fetch Account Statement', filters, config, res)
+		if isinstance(res, dict):
+			if 'status' in res and res['status']== 'FAILURE' and bank_account:
+				frappe.throw(_(f'Unable to fetch statement.Please check log {get_link_to_form("Bank API Request Log", log_name)} for more info.'))
+		else:
+			frappe.throw(_(f'Unable to fetch statement.Please check log {get_link_to_form("Bank API Request Log", log_name)} for more info.'))
 
 def log_request(doc_name, api_method, filters, config, res):
 	request_log = frappe.get_doc({
