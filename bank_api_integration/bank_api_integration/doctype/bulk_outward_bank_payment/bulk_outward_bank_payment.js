@@ -1,6 +1,6 @@
 // Copyright (c) 2021, Aerele and contributors
 // For license information, please see license.txt
-{% include 'bank_api_integration/bank_api_integration/utils/common_fields.js' %};
+{% include 'bank_api_integration/bank_api_integration/utils/js/common_fields.js' %};
 frappe.ui.form.on("Bulk Outward Bank Payment", {
 		refresh: function(frm) {
 			frm.trigger('verify_and_initiate_payment');
