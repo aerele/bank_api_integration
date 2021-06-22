@@ -1,7 +1,14 @@
 // Copyright (c) 2021, Aerele and contributors
 // For license information, please see license.txt
-{% include 'bank_api_integration/bank_api_integration/utils/common_fields.js' %};
+{% include 'bank_api_integration/bank_api_integration/utils/js/common_fields.js' %};
 frappe.ui.form.on('Outward Bank Payment', {
+	setup: function(frm) {
+		frm.set_query("party_type", function() {
+			return {
+				query: "erpnext.setup.doctype.party_type.party_type.get_party_type",
+			};
+		});
+	},
 	refresh: function(frm) {
 		frm.trigger('verify_and_initiate_payment');
 		if(frappe.user.has_role('Bank Maker')){
@@ -63,7 +70,6 @@ frappe.ui.form.on('Outward Bank Payment', {
 		frm.trigger('verify_and_initiate_payment');
 	},
 	verify_and_initiate_payment: function(frm){
-		frm.reload_doc()
 		if(frappe.user.has_role('Bank Checker') && frm.doc.workflow_state == 'Approved' && frm.doc.retry_count < 3){
 			frm.add_custom_button(__("Verify and Initiate Payment"), function(){
 			let dialog_fields = [];
@@ -142,6 +148,7 @@ frappe.ui.form.on('Outward Bank Payment', {
 			args: {
 				"bank_account":frm.doc.company_bank_account
 			},
+			freeze: true,
 			callback: function(r) {
 				if (r.message) {
 					frm.set_df_property("transaction_type","options",r.message.join('\n'))
@@ -333,9 +340,8 @@ frappe.ui.form.on('Outward Bank Payment', {
 
 		frm.refresh_fields()
 		frm.events.set_total_allocated_amount(frm);
-	},
-
-});
+	}
+})
 var show_dialog = function(frm, dialog_fields){
 	let d = new frappe.ui.Dialog({
 		title: __('Enter the Details'),
