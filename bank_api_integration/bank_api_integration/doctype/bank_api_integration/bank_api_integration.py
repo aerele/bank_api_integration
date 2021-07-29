@@ -11,7 +11,7 @@ from banking_api import CommonProvider
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from frappe.permissions import add_permission, update_permission_property
 from frappe.core.doctype.version.version import get_diff
-from frappe.utils import getdate, now_datetime, get_link_to_form, nowdate
+from frappe.utils import getdate, now_datetime, get_link_to_form, get_datetime
 
 class BankAPIIntegration(Document):
 	pass
@@ -287,7 +287,7 @@ def fetch_balance(bank_account = None):
 			doc = frappe.get_doc('Bank Account', acc)
 			if res['status'] == 'SUCCESS':
 				doc.db_set('balance_amount',res['balance'])
-				doc.db_set('balance_last_synced_on',res['date'])
+				doc.db_set('balance_last_synced_on',get_datetime(res['date']))
 				doc.reload()
 				frappe.msgprint(_("""Balance Updated"""))
 		except:
@@ -313,18 +313,18 @@ def fetch_account_statement(bank_account = None):
 
 	for acc in account_list:
 		prov, config = get_api_provider_class(acc)
+		now_date = now_datetime().strftime("%d-%m-%Y")
 		try:
 			last_doc = frappe.get_last_doc("Bank Transaction", {'bank_account':acc})
-			from_date = last_doc.date
+			from_date = last_doc.date.strftime("%d-%m-%Y")
 			if not from_date:
-				from_date = nowdate()
+				from_date = now_date
 		except:
-			from_date = nowdate()
+			from_date = now_date
 		filters = {
 			"ACCOUNTNO": frappe.db.get_value('Bank Account',{'name':acc},'bank_account_no'),
 			"FROMDATE": from_date,
-			"TODATE": nowdate(),
-			"CONFLG": "N"
+			"TODATE": now_date
 		}
 		try:
 			res = prov.fetch_statement_with_pagination(filters)
