@@ -104,7 +104,8 @@ def make_bank_payment(source_name, target_doc=None):
 			"doctype": "Outward Bank Payment",
 			"field_map": {
 				"supplier": "party",
-				"outstanding_amount": "amount" 
+				"outstanding_amount": "amount",
+				"name" : "remarks" 
 			}
 			}
 
