@@ -151,5 +151,7 @@ scheduler_events = {
 #
 # auto_cancel_exempted_doctypes = ["Auto Repeat"]
 doctype_js = {
-    "Bank Account": "bank_api_integration/utils/js/bank_account.js"
+    "Bank Account": "bank_api_integration/utils/js/bank_account.js",
+	"Purchase Invoice" : "bank_api_integration/custom/js/purchase_invoice.js",
+	"Purchase Order" : "bank_api_integration/custom/js/purchase_order.js"
 }

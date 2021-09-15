@@ -92,6 +92,47 @@ class OutwardBankPayment(Document):
 		self.reload()
 
 @frappe.whitelist()
+def make_bank_payment(source_name, target_doc=None):
+	#Assigning party type as supplier
+	def set_supplier(source_doc,target_doc,source_parent):
+		target_doc.party_type="Supplier"
+	
+	from frappe.model.mapper import get_mapped_doc
+	doclist = get_mapped_doc("Purchase Invoice", source_name,{
+		"Purchase Invoice": {
+			"postprocess": set_supplier,
+			"doctype": "Outward Bank Payment",
+			"field_map": {
+				"supplier": "party",
+				"outstanding_amount": "amount",
+				"name" : "remarks" 
+			}
+			}
+
+		}, target_doc)
+	return doclist
+@frappe.whitelist()
+def bank_payment_for_purchase_order(source_name, target_doc=None):
+	#Assigning party type as supplier
+	def set_supplier(source_doc,target_doc,source_parent):
+		target_doc.party_type="Supplier"
+	
+	from frappe.model.mapper import get_mapped_doc
+	doclist = get_mapped_doc("Purchase Order", source_name,{
+		"Purchase Order": {
+			"postprocess": set_supplier,
+			"doctype": "Outward Bank Payment",
+			"field_map": {
+				"supplier": "party",
+				"grand_total": "amount",
+				"name" : "remarks" 
+			}
+			}
+
+		}, target_doc)
+	return doclist
+
+@frappe.whitelist()
 def get_outstanding_reference_documents(args):
 
 	if isinstance(args, string_types):
