@@ -104,7 +104,8 @@ def make_bank_payment(source_name, target_doc=None):
 			'reference_name': source_doc.name,
 			'reference_doctype': 'Purchase Invoice',
 			"total_amount": source_doc.rounded_total,
-			"outstanding_amount":source_doc.outstanding_amount
+			"outstanding_amount":source_doc.outstanding_amount,
+			"allocated_amount":source_doc.outstanding_amount
 		})
 	from frappe.model.mapper import get_mapped_doc
 	doclist = get_mapped_doc("Purchase Invoice", source_name,{
@@ -113,7 +114,8 @@ def make_bank_payment(source_name, target_doc=None):
 			"doctype": "Outward Bank Payment",
 			"field_map": {
 				"supplier": "party",
-				"name" : "remarks" 
+				"name" : "remarks",
+				"outstanding_amount" : "amount" 
 			}
 			}
 
@@ -128,7 +130,8 @@ def bank_payment_for_purchase_order(source_name, target_doc=None):
 		target_doc.append('payment_references',{
 			'reference_name': source_doc.name,
 			'reference_doctype': 'Purchase Order',
-			"total_amount": source_doc.rounded_total
+			"total_amount": source_doc.rounded_total,
+			"allocated_amount":source_doc.rounded_total
 		})
 	
 	from frappe.model.mapper import get_mapped_doc
@@ -138,7 +141,8 @@ def bank_payment_for_purchase_order(source_name, target_doc=None):
 			"doctype": "Outward Bank Payment",
 			"field_map": {
 				"supplier": "party",
-				"name" : "remarks" 
+				"name" : "remarks",
+				"grand_total" : "amount" 
 			}
 			}
 
