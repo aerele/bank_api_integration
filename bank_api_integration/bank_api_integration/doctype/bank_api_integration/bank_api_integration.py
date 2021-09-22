@@ -216,8 +216,8 @@ def update_transaction_status(obp_name=None,bobp_name=None):
 			res = frappe.get_traceback()
 		
 		log_name = log_request(obp_doc.name,'Update Transaction Status', filters, config, res)
-		frappe.db.set_value('Outward Bank Payment', {'name': obp_doc.name}, 'workflow_state', workflow_state)
-		frappe.db.commit()
+		obp_doc.workflow_state = workflow_state
+		obp_doc.save()
 		if workflow_state in ['Transaction Pending', 'Transaction Error', 'Transaction Failed'] and not bulk_update:
 			if not obp_doc.bobp:
 				frappe.throw(_(f'An error occurred while making request. Kindly check request log for more info {get_link_to_form("Bank API Request Log", log_name)}'))

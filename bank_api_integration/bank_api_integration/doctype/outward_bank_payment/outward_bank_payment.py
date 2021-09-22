@@ -79,6 +79,9 @@ class OutwardBankPayment(Document):
 			"party" :  self.party,
 			"posting_date" : today(),
 			"paid_amount": self.amount,
+			"received_amount":self.amount,
+			"reference_no":self.utr_number,
+			"reference_date":today(),
 			"references": references
 		}
 		payment_entry = frappe.new_doc("Payment Entry")
@@ -96,7 +99,14 @@ def make_bank_payment(source_name, target_doc=None):
 	#Assigning party type as supplier
 	def set_supplier(source_doc,target_doc,source_parent):
 		target_doc.party_type="Supplier"
-	
+		target_doc.reconcile_action="Manual Reconcile"
+		target_doc.append('payment_references',{
+			'reference_name': source_doc.name,
+			'reference_doctype': 'Purchase Invoice',
+			"total_amount": source_doc.rounded_total,
+			"outstanding_amount":source_doc.outstanding_amount,
+			"allocated_amount":source_doc.outstanding_amount
+		})
 	from frappe.model.mapper import get_mapped_doc
 	doclist = get_mapped_doc("Purchase Invoice", source_name,{
 		"Purchase Invoice": {
@@ -104,8 +114,8 @@ def make_bank_payment(source_name, target_doc=None):
 			"doctype": "Outward Bank Payment",
 			"field_map": {
 				"supplier": "party",
-				"outstanding_amount": "amount",
-				"name" : "remarks" 
+				"name" : "remarks",
+				"outstanding_amount" : "amount" 
 			}
 			}
 
@@ -116,6 +126,13 @@ def bank_payment_for_purchase_order(source_name, target_doc=None):
 	#Assigning party type as supplier
 	def set_supplier(source_doc,target_doc,source_parent):
 		target_doc.party_type="Supplier"
+		target_doc.reconcile_action="Manual Reconcile"
+		target_doc.append('payment_references',{
+			'reference_name': source_doc.name,
+			'reference_doctype': 'Purchase Order',
+			"total_amount": source_doc.rounded_total,
+			"allocated_amount":source_doc.rounded_total
+		})
 	
 	from frappe.model.mapper import get_mapped_doc
 	doclist = get_mapped_doc("Purchase Order", source_name,{
@@ -124,8 +141,8 @@ def bank_payment_for_purchase_order(source_name, target_doc=None):
 			"doctype": "Outward Bank Payment",
 			"field_map": {
 				"supplier": "party",
-				"grand_total": "amount",
-				"name" : "remarks" 
+				"name" : "remarks",
+				"grand_total" : "amount" 
 			}
 			}
 
