@@ -71,6 +71,8 @@ class OutwardBankPayment(Document):
 			self.create_payment_entry(references)
 
 	def create_payment_entry(self, references):
+		account_paid_from = frappe.db.get_value("Bank Account", self.company_bank_account, "account")
+		account_currency = frappe.db.get_value("Account", account_paid_from, "account_currency")
 		payment_entry_dict = {
 			"company" : self.company,
 			"payment_type" : 'Pay',
@@ -84,6 +86,8 @@ class OutwardBankPayment(Document):
 			"reference_date":today(),
 			"source_exchange_rate": 1,
 			"target_exchange_rate": 1,
+			"paid_from": account_paid_from,
+			"paid_from_account_currency": account_currency,
 			"references": references
 		}
 		payment_entry = frappe.new_doc("Payment Entry")
