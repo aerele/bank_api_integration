@@ -95,10 +95,8 @@ class OutwardBankPayment(Document):
 
 		payment_entry.insert()
 		payment_entry.submit()
-
-		self.payment_entry = payment_entry.name
-		self.save()
-		self.reload()
+		
+		frappe.db.set_value(self.doctype, self.name, "payment_entry", payment_entry.name)
 
 @frappe.whitelist()
 def make_bank_payment(source_name, target_doc=None):
