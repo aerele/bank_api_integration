@@ -82,6 +82,8 @@ class OutwardBankPayment(Document):
 			"received_amount":self.amount,
 			"reference_no":self.utr_number,
 			"reference_date":today(),
+			"source_exchange_rate": 1,
+			"target_exchange_rate": 1,
 			"references": references
 		}
 		payment_entry = frappe.new_doc("Payment Entry")
