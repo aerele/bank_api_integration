@@ -23,7 +23,6 @@ class OutwardBankPayment(Document):
 		if len(final_remark)>25:
 			final_remark=final_remark[0:25]
 		self.remarks=final_remark
-		print(self.remarks)
 	def on_update(self):
 		is_authorized(self)
 	def on_change(self):
