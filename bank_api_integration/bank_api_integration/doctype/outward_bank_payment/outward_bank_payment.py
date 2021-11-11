@@ -14,6 +14,15 @@ from erpnext.accounts.utils import get_outstanding_invoices, get_account_currenc
 from frappe.utils import add_months, nowdate
 from bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration import is_authorized
 class OutwardBankPayment(Document):
+	def validate(self):
+		final_remark=""
+		symbols=[',','.','/','-']
+		for i in self.remarks:
+			if(i not in symbols):
+				final_remark+=i
+		if len(final_remark)>25:
+			final_remark=final_remark[0:25]
+		self.remarks=final_remark
 	def on_update(self):
 		is_authorized(self)
 	def on_change(self):
@@ -100,58 +109,68 @@ class OutwardBankPayment(Document):
 
 @frappe.whitelist()
 def make_bank_payment(source_name, target_doc=None):
-	#Assigning party type as supplier
-	def set_supplier(source_doc,target_doc,source_parent):
-		target_doc.party_type="Supplier"
-		target_doc.reconcile_action="Manual Reconcile"
-		target_doc.append('payment_references',{
-			'reference_name': source_doc.name,
-			'reference_doctype': 'Purchase Invoice',
-			"total_amount": source_doc.rounded_total,
-			"outstanding_amount":source_doc.outstanding_amount,
-			"allocated_amount":source_doc.outstanding_amount
-		})
-	from frappe.model.mapper import get_mapped_doc
-	doclist = get_mapped_doc("Purchase Invoice", source_name,{
-		"Purchase Invoice": {
-			"postprocess": set_supplier,
-			"doctype": "Outward Bank Payment",
-			"field_map": {
-				"supplier": "party",
-				"name" : "remarks",
-				"outstanding_amount" : "amount" 
-			}
-			}
+	supplier=frappe.db.get_value("Purchase Order",{"name":source_name},"supplier")
+	if(frappe.db.get_value("Bank Account",{"party":supplier},"is_default")):
+		#Assigning party type as supplier
+		def set_supplier(source_doc,target_doc,source_parent):
+			target_doc.party_type="Supplier"
+			target_doc.reconcile_action="Manual Reconcile"
+			target_doc.append('payment_references',{
+				'reference_name': source_doc.name,
+				'reference_doctype': 'Purchase Invoice',
+				"total_amount": source_doc.rounded_total,
+				"outstanding_amount":source_doc.outstanding_amount,
+				"allocated_amount":source_doc.outstanding_amount
+			})
+		from frappe.model.mapper import get_mapped_doc
+		doclist = get_mapped_doc("Purchase Invoice", source_name,{
+			"Purchase Invoice": {
+				"postprocess": set_supplier,
+				"doctype": "Outward Bank Payment",
+				"field_map": {
+					"supplier": "party",
+					"name" : "remarks",
+					"outstanding_amount" : "amount" 
+				}
+				}
 
-		}, target_doc)
-	return doclist
+			}, target_doc)
+		return doclist
+	else:
+		frappe.throw(_(f'{supplier} ' "have no bank account"))
+
 @frappe.whitelist()
 def bank_payment_for_purchase_order(source_name, target_doc=None):
-	#Assigning party type as supplier
-	def set_supplier(source_doc,target_doc,source_parent):
-		target_doc.party_type="Supplier"
-		target_doc.reconcile_action="Manual Reconcile"
-		target_doc.append('payment_references',{
-			'reference_name': source_doc.name,
-			'reference_doctype': 'Purchase Order',
-			"total_amount": source_doc.rounded_total,
-			"allocated_amount":source_doc.rounded_total
-		})
-	
-	from frappe.model.mapper import get_mapped_doc
-	doclist = get_mapped_doc("Purchase Order", source_name,{
-		"Purchase Order": {
-			"postprocess": set_supplier,
-			"doctype": "Outward Bank Payment",
-			"field_map": {
-				"supplier": "party",
-				"name" : "remarks",
-				"grand_total" : "amount" 
-			}
-			}
+	supplier=frappe.db.get_value("Purchase Order",{"name":source_name},"supplier")
+	if(frappe.db.get_value("Bank Account",{"party":supplier},"is_default")):
+		#Assigning party type as supplier
+		def set_supplier(source_doc,target_doc,source_parent):
+			target_doc.party_type="Supplier"
+			target_doc.reconcile_action="Manual Reconcile"
+			target_doc.append('payment_references',{
+				'reference_name': source_doc.name,
 
-		}, target_doc)
-	return doclist
+				'reference_doctype': 'Purchase Order',
+				"total_amount": source_doc.rounded_total,
+				"allocated_amount":source_doc.rounded_total
+			})
+		
+		from frappe.model.mapper import get_mapped_doc
+		doclist = get_mapped_doc("Purchase Order", source_name,{
+			"Purchase Order": {
+				"postprocess": set_supplier,
+				"doctype": "Outward Bank Payment",
+				"field_map": {
+					"supplier": "party",
+					"name" : "remarks",
+					"grand_total" : "amount" 
+				}
+				}
+
+			}, target_doc)
+		return doclist
+	else:
+		frappe.throw(_(f'{supplier} ' "have no bank account"))
 
 @frappe.whitelist()
 def get_outstanding_reference_documents(args):
