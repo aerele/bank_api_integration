@@ -327,7 +327,7 @@ def fetch_account_statement(bank_account = None):
 			"TODATE": now_date
 		}
 		try:
-			res = prov.fetch_statement_with_pagination(filters)
+			res = prov.fetch_statement(filters)
 			doc = frappe.get_doc('Bank Account', acc)
 			if res['status'] == 'SUCCESS':
 				transaction_list = []
