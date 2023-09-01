@@ -85,24 +85,13 @@ def initiate_transaction_without_otp(docname):
 	filters = {
 		"REMARKS": doc.remarks,
 		"UNIQUEID": doc.name,
-		"IFSC": frappe.db.get_value('Bank Account', 
-				{'party_type': doc.party_type,
-				'party': doc.party,
-				'is_default': 1
-				},'ifsc_code'),
+		"IFSC": doc.ifsc_code,
 		"AMOUNT": str(doc.amount),
 		"CURRENCY": currency,
 		"TXNTYPE": doc.transaction_type,
 		"PAYEENAME": doc.party,
-		"DEBITACC": frappe.db.get_value('Bank Account', 
-					{
-					'name': doc.company_bank_account
-					},'bank_account_no'),
-		"CREDITACC": frappe.db.get_value('Bank Account', 
-				{'party_type': doc.party_type,
-				'party': doc.party,
-				'is_default': 1
-				},'bank_account_no')
+		"DEBITACC": doc.debit_acc,
+		"CREDITACC": doc.bank_account_no,
 	}
 	try:
 		res = prov.initiate_transaction_without_otp(filters)
@@ -212,12 +201,15 @@ def update_transaction_status(obp_name=None,bobp_name=None):
 			else:
 				workflow_state = 'Transaction Error'
 		except:
-			workflow_state = 'Transaction Error'
+			# workflow_state = 'Transaction Error'
 			res = frappe.get_traceback()
 		
 		log_name = log_request(obp_doc.name,'Update Transaction Status', filters, config, res)
-		obp_doc.workflow_state = workflow_state
-		obp_doc.save()
+		# obp_doc.workflow_state = workflow_state
+		# obp_doc.save()
+		if workflow_state:
+			frappe.db.set_value('Outward Bank Payment', {'name': obp_doc.name}, 'workflow_state', workflow_state)
+			frappe.db.commit()
 		if workflow_state in ['Transaction Pending', 'Transaction Error', 'Transaction Failed'] and not bulk_update:
 			if not obp_doc.bobp:
 				frappe.throw(_(f'An error occurred while making request. Kindly check request log for more info {get_link_to_form("Bank API Request Log", log_name)}'))

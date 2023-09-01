@@ -12,7 +12,7 @@ frappe.ui.form.on('Outward Bank Payment', {
 	refresh: function(frm) {
 		frm.trigger('verify_and_initiate_payment');
 		if(frappe.user.has_role('Bank Maker')){
-		frm.set_df_property('retry_count', 'hidden', 1);
+			frm.set_df_property('retry_count', 'hidden', 1);
 		}
 		if (frm.doc.docstatus == 1 && ['Initiated', 'Initiation Pending', 'Transaction Pending'].includes(frm.doc.workflow_state)){ 
 			frm.add_custom_button(__("Update Transaction Status"), function() {
@@ -47,6 +47,34 @@ frappe.ui.form.on('Outward Bank Payment', {
 				}, __('Reason for Rejection'), __('Submit'));
 			})
 	}
+	},
+	party_type: function(frm) {
+		frm.trigger("get_party_account_details");
+	},
+	party: function(frm) {
+		frm.trigger("get_party_account_details");
+	},
+	get_party_account_details: function(frm) {
+		if (!frm.doc.party_type || !frm.doc.party) {
+			frm.set_value({
+				'bank_account_no': '',
+				'ifsc_code': '',
+			})
+		} else {
+			frappe.call({
+				method: 'bank_api_integration.bank_api_integration.doctype.outward_bank_payment.outward_bank_payment.get_party_account_details',
+				freeze: true,
+				args: {
+					'party_type': frm.doc.party_type,
+					'party': frm.doc.party,
+				},
+				callback: function(r) {
+					if (r.message) {
+						frm.set_value(r.message)
+					}
+				}
+			})
+		}
 	},
 	after_workflow_action: function(frm){
 		if(frm.doc.workflow_state == 'Approved'){

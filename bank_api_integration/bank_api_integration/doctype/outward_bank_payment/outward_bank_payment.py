@@ -229,3 +229,15 @@ def get_outstanding_reference_documents(args):
 			.format(args.get("party_type").lower(), frappe.bold(args.get("party"))))
 
 	return data
+
+@frappe.whitelist()
+def get_party_account_details(party_type, party):
+	acc_list = frappe.get_list('Bank Account', filters = {'party_type': party_type, 'party': party, 'is_default': 1}, pluck="name")
+	if not acc_list or len(acc_list) == 0:
+		frappe.throw("There is no account available")
+	elif acc_list and len(acc_list) == 1:
+		acc_doc = frappe.get_doc('Bank Account', acc_list[0])
+		return {'bank_account_no': acc_doc.bank_account_no, 'ifsc_code': acc_doc.ifsc_code}
+	else:
+		frappe.throw("There is multiple accounts for this "+ party_type)
+	
