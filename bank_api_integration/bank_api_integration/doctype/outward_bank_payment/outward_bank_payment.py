@@ -13,6 +13,7 @@ from erpnext.controllers.accounts_controller import get_supplier_block_status
 from erpnext.accounts.utils import get_outstanding_invoices, get_account_currency
 from frappe.utils import add_months, nowdate
 from bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration import is_authorized
+
 class OutwardBankPayment(Document):
 	def validate(self):
 		final_remark=""
