@@ -258,8 +258,8 @@ def new_bank_transaction(transaction_list, bank_account):
 				'doctype': 'Bank Transaction',
 				'date': getdate(transaction['txn_date'].split(' ')[0]),
 				"transaction_id": transaction["txn_id"],
-				'withdrawal': abs(float(transaction['debit'].replace(',',''))) if transaction['debit'] else 0,
-				'deposit': abs(float(transaction['credit'].replace(',',''))) if transaction['credit'] else 0,
+				'withdrawal': transaction['debit'] if transaction['debit'] else 0,
+				'deposit': transaction['credit'] if transaction['credit'] else 0,
 				'description': transaction['remarks'],
 				'bank_account': bank_account
 			})
@@ -329,28 +329,25 @@ def fetch_account_statement(bank_account = None):
 		try:
 			res = prov.fetch_statement_with_pagination(filters)
 			doc = frappe.get_doc('Bank Account', acc)
-			if res['status'] == 'SUCCESS':
-				transaction_list = []
-				for transaction in res['record']:
-					credit = 0 
-					debit = 0
-					if transaction['TYPE'] == 'DR':
-						debit = transaction['AMOUNT']
-					if transaction['TYPE'] == 'CR':
-						credit = transaction['AMOUNT']
 
-					transaction_list.append({
-						'txn_id': transaction['TRANSACTIONID'],
-						'txn_date':transaction['TXNDATE'],
-						'debit': debit,
-						'credit': credit,
-						'remarks':transaction['REMARKS']
-					})
+			if res['status'] == 'SUCCESS':
+				transaction_data = res['record']
+				transaction_list = []
+
+				# Check if transaction_data is a list
+				if isinstance(transaction_data, list):
+				    for transaction in transaction_data:
+				        transaction_list.append(process_transaction(transaction))
+				else:
+				    # Process a single transaction
+				    transaction_list.append(process_transaction(transaction_data))
+
 				if new_bank_transaction(transaction_list, acc):
-					doc.db_set('statement_last_synced_on',now_datetime())
-					doc.reload()
-					frappe.msgprint(_("""Statements updated"""))
-		except:
+				    doc.db_set('statement_last_synced_on', now_datetime())
+				    doc.reload()
+				    frappe.msgprint(_("""Statements updated"""))
+
+		except Exception as e:
 			res = frappe.get_traceback()
 		
 		log_name = log_request(bank_account, 'Fetch Account Statement', filters, config, res)
@@ -359,6 +356,26 @@ def fetch_account_statement(bank_account = None):
 				frappe.throw(_(f'Unable to fetch statement.Please check log {get_link_to_form("Bank API Request Log", log_name)} for more info.'))
 		else:
 			frappe.throw(_(f'Unable to fetch statement.Please check log {get_link_to_form("Bank API Request Log", log_name)} for more info.'))
+
+def process_transaction(transaction):
+    
+    credit = 0 
+    debit = 0
+
+    amount = float(transaction['AMOUNT'].replace(',', ''))
+    
+    if transaction['TYPE'] == "DR":
+        debit = amount
+    elif transaction['TYPE'] == "CR":
+        credit = amount
+
+    return {
+        'txn_id': transaction['TRANSACTIONID'],
+        'txn_date': transaction['TXNDATE'],
+        'debit': debit,
+        'credit': credit,
+        'remarks': transaction['REMARKS']
+    }
 
 def log_request(doc_name, api_method, filters, config, res):
 	request_log = frappe.get_doc({
