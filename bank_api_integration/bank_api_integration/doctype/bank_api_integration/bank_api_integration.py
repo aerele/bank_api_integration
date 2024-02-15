@@ -12,6 +12,7 @@ from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from frappe.permissions import add_permission, update_permission_property
 from frappe.core.doctype.version.version import get_diff
 from frappe.utils import getdate, now_datetime, get_link_to_form, get_datetime
+from datetime import datetime
 
 class BankAPIIntegration(Document):
 	pass
@@ -254,9 +255,10 @@ def get_api_provider_class(company_bank_account):
 def new_bank_transaction(transaction_list, bank_account):
 	for transaction in transaction_list:
 		if not frappe.db.exists("Bank Transaction", dict(transaction_id=transaction["txn_id"])):
+			date_obj = datetime.strptime(transaction['txn_date'], '%d-%m-%Y %H:%M:%S')
 			new_transaction = frappe.get_doc({
 				'doctype': 'Bank Transaction',
-				'date': getdate(transaction['txn_date'].split(' ')[0]),
+				'date': date_obj,
 				"transaction_id": transaction["txn_id"],
 				'withdrawal': transaction['debit'] if transaction['debit'] else 0,
 				'deposit': transaction['credit'] if transaction['credit'] else 0,
