@@ -17,6 +17,7 @@
   "section_break_4",
   "party_type",
   "party",
+  "party_name",
   "amount",
   "bank_account_no",
   "ifsc_code",
@@ -25,6 +26,8 @@
   "reason_for_rejection",
   "section_break_11",
   "bobp",
+  "bulk_payout",
+  "bulk_payout_detail",
   "payment_entry",
   "column_break_15",
   "utr_number",
@@ -40,16 +43,14 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Party Type",
-   "options": "DocType",
-   "reqd": 1
+   "options": "DocType"
   },
   {
    "fieldname": "party",
    "fieldtype": "Dynamic Link",
    "in_list_view": 1,
    "label": "Party",
-   "options": "party_type",
-   "reqd": 1
+   "options": "party_type"
   },
   {
    "fieldname": "amount",
@@ -207,12 +208,32 @@
    "fieldname": "debit_acc",
    "fieldtype": "Data",
    "label": "Debit Acc"
+  },
+  {
+   "fieldname": "party_name",
+   "fieldtype": "Data",
+   "label": "Party Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "bulk_payout",
+   "fieldtype": "Link",
+   "label": "Bulk Payout",
+   "no_copy": 1,
+   "options": "SD Bulk Payout",
+   "read_only": 1
+  },
+  {
+   "fieldname": "bulk_payout_detail",
+   "fieldtype": "Data",
+   "label": "Bulk Payout Detail",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-09-01 20:16:30.646064",
+ "modified": "2025-02-08 17:39:24.800760",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Outward Bank Payment",

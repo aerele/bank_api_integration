@@ -59,6 +59,7 @@ frappe.ui.form.on('Outward Bank Payment', {
 			frm.set_value({
 				'bank_account_no': '',
 				'ifsc_code': '',
+				'party_name': '',
 			})
 		} else {
 			frappe.call({
@@ -71,6 +72,7 @@ frappe.ui.form.on('Outward Bank Payment', {
 				callback: function(r) {
 					if (r.message) {
 						frm.set_value(r.message)
+						frm.set_value({'party_name': frm.doc.party})
 					}
 				}
 			})

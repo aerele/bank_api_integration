@@ -89,7 +89,7 @@ def initiate_transaction_without_otp(docname):
 		"AMOUNT": str(doc.amount),
 		"CURRENCY": currency,
 		"TXNTYPE": doc.transaction_type,
-		"PAYEENAME": doc.party,
+		"PAYEENAME": doc.party_name,
 		"DEBITACC": doc.debit_acc,
 		"CREDITACC": doc.bank_account_no,
 	}
@@ -110,11 +110,21 @@ def initiate_transaction_without_otp(docname):
 		res = frappe.get_traceback()
 	log_name = log_request(doc.name, 'Initiate Transaction without OTP', filters, config, res)
 	if workflow_state:
-		frappe.db.set_value('Outward Bank Payment', {'name': doc.name}, 'workflow_state', workflow_state)
+		update_workflow_state(doc, workflow_state)
+		# frappe.db.set_value('Outward Bank Payment', {'name': doc.name}, 'workflow_state', workflow_state)
 		frappe.db.commit()
 	if workflow_state in ['Initiation Error', 'Initiation Failed']:
 		if not doc.bobp:
 			frappe.throw(_(f'An error occurred while making request. Kindly check request log for more info {get_link_to_form("Bank API Request Log", log_name)}'))
+
+def update_workflow_state(obp_doc, state):
+	frappe.db.set_value('Outward Bank Payment', {'name': obp_doc.name}, 'workflow_state', state)
+	if obp_doc.bulk_payout:
+		l = frappe.get_all("SD Bulk Payout Details", filters={'parent': obp_doc.bulk_payout, 'outward_bank_payment': obp_doc.name}, fields=["*"])
+		if not l:
+			frappe.log_error(f"{obp_doc.name} does not have a linked payout", "Could not update Bulk Payout")
+		l1 = l[0]
+		frappe.db.set_value("SD Bulk Payout Details", {'name': l1["name"]}, 'status', state)
 
 @frappe.whitelist()
 def send_otp(doctype, docname):
@@ -168,12 +178,14 @@ def send_otp(doctype, docname):
 	return is_otp_sent
 
 @frappe.whitelist()
-def update_transaction_status(obp_name=None,bobp_name=None):
+def update_transaction_status(obp_name=None, bobp_name=None, bulk_payout_name=None):
 	bulk_update = True
-	if obp_name or bobp_name:
+	if obp_name or bobp_name or bulk_payout_name:
 		bulk_update = False
 	if obp_name:
 		obp_list = [{'name': obp_name}]
+	if bulk_payout_name:
+		obp_list = frappe.db.get_all('Outward Bank Payment', {'workflow_state': ['in', ['Initiated','Initiation Pending','Transaction Pending']], 'bulk_payout': ['=', bulk_payout_name]})
 	if bobp_name:
 		obp_list = frappe.db.get_all('Outward Bank Payment', {'workflow_state': ['in', ['Initiated','Initiation Pending','Transaction Pending']], 'bobp': ['=', bobp_name]})
 	if bulk_update:
@@ -208,7 +220,8 @@ def update_transaction_status(obp_name=None,bobp_name=None):
 		# obp_doc.workflow_state = workflow_state
 		# obp_doc.save()
 		if workflow_state:
-			frappe.db.set_value('Outward Bank Payment', {'name': obp_doc.name}, 'workflow_state', workflow_state)
+			update_workflow_state(obp_doc, workflow_state)
+			# frappe.db.set_value('Outward Bank Payment', {'name': obp_doc.name}, 'workflow_state', workflow_state)
 			frappe.db.commit()
 		if workflow_state in ['Transaction Pending', 'Transaction Error', 'Transaction Failed'] and not bulk_update:
 			if not obp_doc.bobp:

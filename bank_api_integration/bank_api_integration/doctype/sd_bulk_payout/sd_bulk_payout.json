@@ -1,0 +1,108 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-02-08 15:43:02.750641",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "company_bank_account",
+  "payouts",
+  "no_of_payments",
+  "total_payment_amount",
+  "reason_for_rejection",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company_bank_account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company Bank Account",
+   "options": "Bank Account",
+   "reqd": 1
+  },
+  {
+   "allow_bulk_edit": 1,
+   "fieldname": "payouts",
+   "fieldtype": "Table",
+   "label": "Payouts",
+   "options": "SD Bulk Payout Details",
+   "reqd": 1
+  },
+  {
+   "fieldname": "no_of_payments",
+   "fieldtype": "Int",
+   "label": "No of Payments",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_payment_amount",
+   "fieldtype": "Currency",
+   "label": "Total Payment Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "SD Bulk Payout",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "reason_for_rejection",
+   "fieldtype": "Data",
+   "label": "Reason for Rejection",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2025-02-08 15:53:19.756105",
+ "modified_by": "Administrator",
+ "module": "Bank Api Integration",
+ "name": "SD Bulk Payout",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bank Maker",
+   "select": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bank Checker",
+   "select": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
