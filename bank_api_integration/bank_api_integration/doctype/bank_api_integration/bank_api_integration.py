@@ -11,7 +11,7 @@ from banking_api import CommonProvider
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from frappe.permissions import add_permission, update_permission_property
 from frappe.core.doctype.version.version import get_diff
-from frappe.utils import getdate, now_datetime, get_link_to_form, get_datetime
+from frappe.utils import getdate, now_datetime, get_link_to_form, get_datetime, flt
 
 class BankAPIIntegration(Document):
 	pass
@@ -86,7 +86,7 @@ def initiate_transaction_without_otp(docname):
 		"REMARKS": doc.remarks,
 		"UNIQUEID": doc.name,
 		"IFSC": doc.ifsc_code,
-		"AMOUNT": str(doc.amount),
+		"AMOUNT": str(flt(doc.amount, precision=2)),
 		"CURRENCY": currency,
 		"TXNTYPE": doc.transaction_type,
 		"PAYEENAME": doc.party_name,
