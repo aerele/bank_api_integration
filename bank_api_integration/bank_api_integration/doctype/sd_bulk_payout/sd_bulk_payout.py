@@ -72,6 +72,7 @@ def create_obp_records(doc):
 			error_message = frappe.get_traceback()+"\n\n BOBP Name: \n"+ doc.name
 			frappe.log_error(error_message, "OBP Record Creation Error")
 	frappe.db.set_value("SD Bulk Payout", doc.name, "workflow_state", "Completed")
+	frappe.db.set_value("SD Bulk Payout", doc.name, "is_completed", 1)
 
 @frappe.whitelist()
 def verify_and_initiate_transaction(payout_name, entered_password=None):

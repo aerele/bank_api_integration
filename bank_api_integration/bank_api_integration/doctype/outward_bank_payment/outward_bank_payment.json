@@ -31,6 +31,7 @@
   "payment_entry",
   "column_break_15",
   "utr_number",
+  "error_message",
   "reconcile_section",
   "get_outstanding_invoice",
   "payment_references",
@@ -229,12 +230,19 @@
    "fieldtype": "Data",
    "label": "Bulk Payout Detail",
    "read_only": 1
+  },
+  {
+   "fieldname": "error_message",
+   "fieldtype": "Small Text",
+   "label": "Error Message",
+   "no_copy": 1,
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-08 20:40:49.933069",
+ "modified": "2025-02-08 21:57:26.201306",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "Outward Bank Payment",

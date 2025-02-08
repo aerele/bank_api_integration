@@ -78,20 +78,21 @@ def initiate_transaction_with_otp(docname, otp):
 def initiate_transaction_without_otp(docname):
 	doc = frappe.get_doc('Outward Bank Payment', docname)
 	workflow_state = None
+	error_message = None
 
 	res = None
 	currency = frappe.db.get_value("Company", doc.company, "default_currency")
 	prov, config = get_api_provider_class(doc.company_bank_account)
 	filters = {
-		"REMARKS": doc.remarks,
+		"REMARKS": str(doc.remarks).strip(),
 		"UNIQUEID": doc.name,
-		"IFSC": doc.ifsc_code,
+		"IFSC": str(doc.ifsc_code).strip(),
 		"AMOUNT": str(flt(doc.amount, precision=2)),
 		"CURRENCY": currency,
-		"TXNTYPE": doc.transaction_type,
-		"PAYEENAME": doc.party_name,
-		"DEBITACC": doc.debit_acc,
-		"CREDITACC": doc.bank_account_no,
+		"TXNTYPE": str(doc.transaction_type).strip(),
+		"PAYEENAME": str(doc.party_name).strip(),
+		"DEBITACC": str(doc.debit_acc).strip(),
+		"CREDITACC": str(doc.bank_account_no).strip(),
 	}
 	#Settingup Default IFSC for ICICI
 	company_bank_account=frappe.db.get_value('Bank Account',{'name':doc.company_bank_account},'ifsc_code')
@@ -105,31 +106,41 @@ def initiate_transaction_without_otp(docname):
 			frappe.db.set_value(doc.doctype,{'name':doc.name},'is_verified',1)
 			workflow_state = 'Initiated'
 		elif res['status'] in ['FAILURE', 'DUPLICATE']:
+			if 'message' in res:
+				error_message = res['message']
 			workflow_state = 'Initiation Failed'
 		elif 'PENDING' in res['status']:
+			if 'message' in res:
+				error_message = res['message']
 			workflow_state = 'Initiation Pending'
 		else:
+			if 'message' in res:
+				error_message = res['message']
 			workflow_state = 'Initiation Error'
 	except:
 		workflow_state = 'Initiation Error'
 		res = frappe.get_traceback()
 	log_name = log_request(doc.name, 'Initiate Transaction without OTP', filters, config, res)
 	if workflow_state:
-		update_workflow_state(doc, workflow_state)
+		update_workflow_state(doc, workflow_state, error_message=error_message)
 		# frappe.db.set_value('Outward Bank Payment', {'name': doc.name}, 'workflow_state', workflow_state)
 		frappe.db.commit()
 	if workflow_state in ['Initiation Error', 'Initiation Failed']:
 		if not doc.bobp:
 			frappe.throw(_(f'An error occurred while making request. Kindly check request log for more info {get_link_to_form("Bank API Request Log", log_name)}'))
 
-def update_workflow_state(obp_doc, state):
+def update_workflow_state(obp_doc, state, error_message=None):
 	frappe.db.set_value('Outward Bank Payment', {'name': obp_doc.name}, 'workflow_state', state)
+	if error_message:
+		frappe.db.set_value('Outward Bank Payment', {'name': obp_doc.name}, 'error_message', error_message)
 	if obp_doc.bulk_payout:
 		l = frappe.get_all("SD Bulk Payout Details", filters={'parent': obp_doc.bulk_payout, 'outward_bank_payment': obp_doc.name}, fields=["*"])
 		if not l:
 			frappe.log_error(f"{obp_doc.name} does not have a linked payout", "Could not update Bulk Payout")
 		l1 = l[0]
 		frappe.db.set_value("SD Bulk Payout Details", {'name': l1["name"]}, 'status', state)
+		if error_message:
+			frappe.db.set_value("SD Bulk Payout Details", {'name': l1["name"]}, 'error_message', error_message)
 
 @frappe.whitelist()
 def send_otp(doctype, docname):
@@ -202,6 +213,7 @@ def update_transaction_status(obp_name=None, bobp_name=None, bulk_payout_name=No
 	for doc in obp_list:
 		res = None
 		workflow_state = None
+		error_message = None
 		obp_doc = frappe.get_doc('Outward Bank Payment', doc['name'])
 		prov, config = get_api_provider_class(obp_doc.company_bank_account)
 		unique_id = frappe.db.get_value('Bank API Integration', 
@@ -212,10 +224,16 @@ def update_transaction_status(obp_name=None, bobp_name=None, bulk_payout_name=No
 			if res['status'] == 'SUCCESS' and 'utr_number' in res:
 				workflow_state = 'Transaction Completed'
 			elif res['status'] in ['FAILURE', 'DUPLICATE']:
+				if 'message' in res:
+					error_message = res['message']
 				workflow_state = 'Transaction Failed'
 			elif 'PENDING' in res['status']:
+				if 'message' in res:
+					error_message = res['message']
 				workflow_state = 'Transaction Pending'
 			else:
+				if 'message' in res:
+					error_message = res['message']
 				workflow_state = 'Transaction Error'
 		except:
 			# workflow_state = 'Transaction Error'
@@ -225,7 +243,7 @@ def update_transaction_status(obp_name=None, bobp_name=None, bulk_payout_name=No
 		# obp_doc.workflow_state = workflow_state
 		# obp_doc.save()
 		if workflow_state:
-			update_workflow_state(obp_doc, workflow_state)
+			update_workflow_state(obp_doc, workflow_state, error_message=error_message)
 			# frappe.db.set_value('Outward Bank Payment', {'name': obp_doc.name}, 'workflow_state', workflow_state)
 			frappe.db.commit()
 		if workflow_state in ['Transaction Pending', 'Transaction Error', 'Transaction Failed'] and not bulk_update:
