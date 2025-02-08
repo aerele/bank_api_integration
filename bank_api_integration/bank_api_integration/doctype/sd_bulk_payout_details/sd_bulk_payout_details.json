@@ -9,8 +9,8 @@
   "name1",
   "account_number",
   "ifsc_code",
-  "transaction_type",
   "amount",
+  "transaction_type",
   "remarks",
   "status",
   "outward_bank_payment"
@@ -58,19 +58,23 @@
   {
    "fieldname": "status",
    "fieldtype": "Data",
-   "label": "Status"
+   "label": "Status",
+   "no_copy": 1,
+   "read_only": 1
   },
   {
    "fieldname": "outward_bank_payment",
    "fieldtype": "Link",
    "label": "Outward Bank Payment",
-   "options": "Outward Bank Payment"
+   "no_copy": 1,
+   "options": "Outward Bank Payment",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-02-08 15:41:14.801255",
+ "modified": "2025-02-08 19:03:02.813194",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "SD Bulk Payout Details",

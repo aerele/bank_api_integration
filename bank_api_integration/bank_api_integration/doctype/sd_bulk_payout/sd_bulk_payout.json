@@ -1,18 +1,26 @@
 {
  "actions": [],
- "allow_rename": 1,
+ "autoname": "format:BP-{YY}{MM}-{####}",
  "creation": "2025-02-08 15:43:02.750641",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "company",
+  "is_scheduled",
+  "column_break_winwc",
   "company_bank_account",
+  "scheduled_time",
+  "section_break_bjfkc",
   "payouts",
+  "section_break_9levu",
   "no_of_payments",
-  "total_payment_amount",
   "reason_for_rejection",
-  "amended_from"
+  "column_break_mgf8f",
+  "total_payment_amount",
+  "amended_from",
+  "is_completed",
+  "is_schedule_completed"
  ],
  "fields": [
   {
@@ -65,12 +73,62 @@
    "fieldtype": "Data",
    "label": "Reason for Rejection",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "is_scheduled",
+   "fieldtype": "Check",
+   "label": "Is Scheduled",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_winwc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "scheduled_time",
+   "fieldtype": "Datetime",
+   "label": "Scheduled Time",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_bjfkc",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_9levu",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_mgf8f",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "is_completed",
+   "fieldtype": "Check",
+   "label": "Is Completed",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_schedule_completed",
+   "fieldtype": "Check",
+   "label": "Is Schedule Completed",
+   "no_copy": 1,
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-08 15:53:19.756105",
+ "modified": "2025-02-08 19:39:05.405181",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "SD Bulk Payout",

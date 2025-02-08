@@ -93,6 +93,11 @@ def initiate_transaction_without_otp(docname):
 		"DEBITACC": doc.debit_acc,
 		"CREDITACC": doc.bank_account_no,
 	}
+	#Settingup Default IFSC for ICICI
+	company_bank_account=frappe.db.get_value('Bank Account',{'name':doc.company_bank_account},'ifsc_code')
+	if company_bank_account.startswith("ICIC") and doc.ifsc_code.startswith("ICIC"):
+		filters['IFSC'] = "ICIC0000011"
+		filters['TXNTYPE'] = "Internal Payments"
 	try:
 		res = prov.initiate_transaction_without_otp(filters)
 		if res['status'] == 'SUCCESS' and 'utr_number' in res:

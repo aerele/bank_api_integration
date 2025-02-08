@@ -22,6 +22,21 @@ frappe.ui.form.on('SD Bulk Payout', {
 		// 		}).addClass("btn-primary");
 		// 	}
 		// }
+
+		if(frappe.user.has_role('Bank Checker') && frm.doc.workflow_state == 'Scheduled') {
+			frm.add_custom_button(__("Cancel Scheduling"), function() {
+				frappe.call({
+					method: 'bank_api_integration.bank_api_integration.doctype.sd_bulk_payout.sd_bulk_payout.cancel_schedule',
+					args: {
+						"payout_name":frm.doc.name,
+					},
+				   freeze:true,
+					callback: function(r) {
+					   frm.reload_doc();
+					}
+				});
+			}).addClass("btn-primary");
+		}
 	},
 	before_workflow_action: function(frm) {
 		if(frm.selected_workflow_action == 'Reject') {
@@ -87,8 +102,6 @@ frappe.ui.form.on('SD Bulk Payout', {
 				   callback: function(r) {
 					   let data = r.message;
 					   if (data) {
-						data.is_pwd_security_enabled = true;
-						data.is_otp_enabled = false;
 						if (data.is_otp_enabled && !data.is_pwd_security_enabled){
 							dialog_fields = [
 								{
@@ -147,7 +160,98 @@ frappe.ui.form.on('SD Bulk Payout', {
 					   }
 				    }
 			    });
-		    }).addClass("btn-primary");		
+		    }).addClass("btn-primary");	
+
+
+			frm.add_custom_button(__("Verify and Schedule Payment"), function() {
+				let dialog_fields = [];
+				let bank_account = frm.doc.company_bank_account;
+				frappe.call({
+				   method: 'bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.get_field_status',
+				   freeze: true,
+				   args: {
+					   'bank_account': bank_account
+				   },
+				   callback: function(r) {
+					   let data = r.message;
+					   if (data) {
+						if (data.is_otp_enabled && !data.is_pwd_security_enabled){
+							dialog_fields = [
+								{
+									fieldtype: "Int",
+									label: __("OTP"),
+									fieldname: "otp",
+									reqd: 1
+								},
+								{
+									fieldtype: "Datetime",
+									label: __("Scheduled Time"),
+									fieldname: "scheduled_time",
+									reqd: 1,
+								}
+							]
+							show_dialog(frm, dialog_fields, true)
+						}
+						if (!data.is_otp_enabled && data.is_pwd_security_enabled){
+							dialog_fields = [
+								{
+									fieldtype: "Password",
+									label: __("Transaction Password"),
+									fieldname: "transaction_password",
+									reqd: 1,
+								},
+								{
+									fieldtype: "Datetime",
+									label: __("Scheduled Time"),
+									fieldname: "scheduled_time",
+									reqd: 1,
+								}
+							]
+							show_dialog(frm, dialog_fields, true)
+						}
+						if (data.is_otp_enabled && data.is_pwd_security_enabled){
+							frappe.call({
+								method: 'bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.send_otp',
+								freeze: true,
+								args: {
+									'doctype': 'SD Bulk Payout',
+									'docname': frm.doc.name
+								},
+								callback: function(r) {
+									if(r.message == true){
+										frappe.show_alert({message:__('OTP Sent Successfully'), indicator:'green'});
+										dialog_fields = [
+												{
+													fieldtype: "Password",
+													label: __("Transaction Password"),
+													fieldname: "transaction_password",
+													reqd: 1
+												},
+												{
+													fieldtype: "Int",
+													label: __("OTP"),
+													fieldname: "otp",
+													reqd: 1
+												},
+												{
+													fieldtype: "Datetime",
+													label: __("Scheduled Time"),
+													fieldname: "scheduled_time",
+													reqd: 1,
+												}
+											]
+										show_dialog(frm, dialog_fields, true)
+									}
+									else {
+										frappe.show_alert({message:__('Unable to send OTP'), indicator:'red'});
+									}
+								}
+							});
+						}
+					   }
+				    }
+			    });
+		    }).addClass("btn-primary");	
 		}
 	},
 	company_bank_account: function(frm) {
@@ -192,25 +296,43 @@ frappe.ui.form.on('SD Bulk Payout', {
 	// }
 });
 
-var show_dialog = function(frm, dialog_fields){
+var show_dialog = function(frm, dialog_fields, is_scheduled=false){
 	let d = new frappe.ui.Dialog({
 		title: __('Enter the Details'),
 		fields: dialog_fields,
 		primary_action: function() {
-		 let data = d.get_values();
-		 d.hide();
-		 frappe.call({
-			 method: 'bank_api_integration.bank_api_integration.doctype.sd_bulk_payout.sd_bulk_payout.verify_and_initiate_transaction',
-			 args: {
-				 "payout_name":frm.doc.name,
-				 "entered_password": data.transaction_password,
-				//  "otp": data.otp
-			 },
-			 freeze:true,
-			 callback: function(r) {
-				frm.reload_doc();
-			 }
-		 });
+		 	let data = d.get_values();
+		 	d.hide();
+
+			if (!is_scheduled) {
+				frappe.call({
+					method: 'bank_api_integration.bank_api_integration.doctype.sd_bulk_payout.sd_bulk_payout.verify_and_initiate_transaction',
+					args: {
+						"payout_name":frm.doc.name,
+						"entered_password": data.transaction_password,
+					   //  "otp": data.otp
+					},
+				   freeze:true,
+					callback: function(r) {
+					   frm.reload_doc();
+					}
+				});
+			} else {
+				frappe.call({
+					method: 'bank_api_integration.bank_api_integration.doctype.sd_bulk_payout.sd_bulk_payout.verify_and_schedule_transaction',
+					args: {
+						"payout_name":frm.doc.name,
+						"entered_password": data.transaction_password,
+						"scheduled_time": data.scheduled_time
+					   //  "otp": data.otp
+					},
+				   freeze:true,
+					callback: function(r) {
+					   frm.reload_doc();
+					}
+				});
+			}
+
 		}
 	});
 	d.show();

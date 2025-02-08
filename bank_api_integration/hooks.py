@@ -105,10 +105,13 @@ after_install = "bank_api_integration.bank_api_integration.doctype.bank_api_inte
 scheduler_events = {
 	"cron": {
 		"0/30 * * * *": [
-		"bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.update_transaction_status",
-		"bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.fetch_balance",
-		"bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.fetch_account_statement"
-		]
+			"bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.update_transaction_status",
+			"bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.fetch_balance",
+			"bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration.fetch_account_statement"
+		],
+        "0/10 * * * *": [
+            "bank_api_integration.bank_api_integration.doctype.sd_bulk_payout.sd_bulk_payout.process_scheduled_payouts"
+		],
 	}
 }
 # 	"all": [

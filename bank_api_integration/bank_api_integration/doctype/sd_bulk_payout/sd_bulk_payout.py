@@ -4,7 +4,7 @@
 import frappe, json
 from frappe import _
 from six import string_types
-from frappe.utils import flt
+from frappe.utils import flt, now_datetime
 from frappe.model.document import Document
 from frappe.core.page.background_jobs.background_jobs import get_info
 from frappe.utils.background_jobs import enqueue
@@ -32,7 +32,8 @@ class SDBulkPayout(Document):
 				timeout=6000,
 				event="obp_record_creation",
 				job_name=self.name,
-				doc = self
+				doc = self,
+				enqueue_after_commit=True
 			)
 			frappe.msgprint(
 				_("OBP record creation job added to queue. Please check after sometime.")
@@ -40,6 +41,8 @@ class SDBulkPayout(Document):
 
 def create_obp_records(doc):
 	for row in doc.payouts:
+		if flt(row.amount) <= 0:
+			continue
 		try:
 			data = {
 				'party_name': row.name1,
@@ -68,7 +71,7 @@ def create_obp_records(doc):
 		except:
 			error_message = frappe.get_traceback()+"\n\n BOBP Name: \n"+ doc.name
 			frappe.log_error(error_message, "OBP Record Creation Error")
-	frappe.db.set_value("SD Bulk Payout", doc.name, "workflow_state", "Initiated")
+	frappe.db.set_value("SD Bulk Payout", doc.name, "workflow_state", "Completed")
 
 @frappe.whitelist()
 def verify_and_initiate_transaction(payout_name, entered_password=None):
@@ -83,4 +86,52 @@ def verify_and_initiate_transaction(payout_name, entered_password=None):
 		if not entered_password == defined_password:
 			frappe.throw(_("Invalid Password"))
 		bulk_payout.create_obp_records()
+		frappe.db.set_value("SD Bulk Payout", payout_name, "workflow_state", "Initiated")
 
+@frappe.whitelist()
+def verify_and_schedule_transaction(payout_name, entered_password=None, scheduled_time=None):
+	if not payout_name or not entered_password or not scheduled_time:
+		frappe.throw("Please send proper details")
+
+	bulk_payout = frappe.get_doc("SD Bulk Payout", payout_name)
+
+	if entered_password:
+		integration_doc_name = frappe.get_value('Bank API Integration',{'bank_account': bulk_payout.company_bank_account},'name')
+		defined_password = frappe.utils.password.get_decrypted_password('Bank API Integration', integration_doc_name, fieldname='transaction_password')
+		if not entered_password == defined_password:
+			frappe.throw(_("Invalid Password"))
+		frappe.db.set_value("SD Bulk Payout", payout_name, "is_scheduled", 1)
+		frappe.db.set_value("SD Bulk Payout", payout_name, "scheduled_time", scheduled_time)
+		frappe.db.set_value("SD Bulk Payout", payout_name, "workflow_state", "Scheduled")
+
+@frappe.whitelist()
+def cancel_schedule(payout_name):
+	bulk_payout = frappe.get_doc("SD Bulk Payout", payout_name)
+	if bulk_payout.workflow_state != "Scheduled":
+		frappe.throw(f"Bulk Payout {payout_name} is not scheduled")
+
+	frappe.db.set_value("SD Bulk Payout", payout_name, "is_scheduled", 0)
+	frappe.db.set_value("SD Bulk Payout", payout_name, "scheduled_time", None)
+	frappe.db.set_value("SD Bulk Payout", payout_name, "workflow_state", "Approved")
+
+def process_scheduled_payouts():
+	n = now_datetime()
+	scheduled_payouts = frappe.get_all(
+		"SD Bulk Payout",
+		filters={
+			'is_scheduled': 1,
+			'is_schedule_completed': 0,
+			'is_completed': 0, 
+			'workflow_state': 'Scheduled',
+			"scheduled_time": (
+				"<=",
+				n,
+			),
+		}, 
+		fields=["name"]
+	)
+	for row in scheduled_payouts:
+		bulk_payout = frappe.get_doc("SD Bulk Payout", row['name'])
+		bulk_payout.create_obp_records()
+		frappe.db.set_value("SD Bulk Payout", row['name'], "workflow_state", "Initiated")
+		frappe.db.set_value("SD Bulk Payout", row['name'], "is_schedule_completed", 1)
