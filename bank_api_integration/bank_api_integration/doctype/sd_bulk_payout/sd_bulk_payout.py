@@ -22,6 +22,7 @@ class SDBulkPayout(Document):
 	def before_cancel(self):
 		if self.is_completed:
 			frappe.throw("Cannot cancel a completed payout")
+		self.workflow_state = "Cancelled"
 	
 	def create_obp_records(self):
 		enqueued_jobs = [d.get("job_name") for d in get_info()]
