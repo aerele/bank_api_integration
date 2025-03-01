@@ -6,6 +6,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "file_name",
   "company",
   "is_scheduled",
   "column_break_winwc",
@@ -123,18 +124,25 @@
    "label": "Is Schedule Completed",
    "no_copy": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "file_name",
+   "fieldtype": "Data",
+   "label": "File Name",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-08 19:39:05.405181",
+ "modified": "2025-03-01 22:10:25.809876",
  "modified_by": "Administrator",
  "module": "Bank Api Integration",
  "name": "SD Bulk Payout",
  "owner": "Administrator",
  "permissions": [
   {
+   "cancel": 1,
    "create": 1,
    "email": 1,
    "export": 1,
@@ -148,6 +156,7 @@
    "write": 1
   },
   {
+   "cancel": 1,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -162,5 +171,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "title_field": "file_name",
  "track_changes": 1
 }

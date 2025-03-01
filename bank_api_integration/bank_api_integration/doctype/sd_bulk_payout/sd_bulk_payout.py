@@ -19,6 +19,10 @@ class SDBulkPayout(Document):
 		self.total_payment_amount = total_payment_amount
 		self.no_of_payments = len(self.payouts)
 	
+	def before_cancel(self):
+		if self.is_completed:
+			frappe.throw("Cannot cancel a completed payout")
+	
 	def create_obp_records(self):
 		enqueued_jobs = [d.get("job_name") for d in get_info()]
 		if self.name in enqueued_jobs:
