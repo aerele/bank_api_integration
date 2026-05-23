@@ -11,6 +11,14 @@ from frappe.utils.background_jobs import enqueue
 
 from bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration import initiate_transaction_without_otp
 
+# MariaDB session-level advisory lock name. All concurrent OBP-creating
+# workers queue on this name, so only one is ever inside the tabSeries
+# critical section. With concurrent writers eliminated, MariaDB's
+# REPEATABLE READ snapshot check (error 1020 ER_CHECKREAD) on tabSeries
+# cannot fire.
+_OBP_INSERT_LOCK = "bank_api_integration:obp_insert"
+
+
 class SDBulkPayout(Document):
 	def validate(self):
 		total_payment_amount = 0
@@ -18,12 +26,12 @@ class SDBulkPayout(Document):
 			total_payment_amount+=flt(row.amount)
 		self.total_payment_amount = total_payment_amount
 		self.no_of_payments = len(self.payouts)
-	
+
 	def before_cancel(self):
 		if self.is_completed:
 			frappe.throw("Cannot cancel a completed payout")
 		self.workflow_state = "Cancelled"
-	
+
 	def create_obp_records(self):
 		enqueued_jobs = [d.get("job_name") for d in get_info()]
 		if self.name in enqueued_jobs:
@@ -61,18 +69,33 @@ def create_obp_records(doc):
 				'bulk_payout': doc.name,
 				'bulk_payout_detail': row.name,
 			}
-			if not frappe.db.exists('Outward Bank Payment', data):
-				data['doctype'] = 'Outward Bank Payment'
-				obp_doc = frappe.get_doc(data)
-				obp_doc.save(ignore_permissions=True)
-				obp_doc.submit()
-				status = frappe.db.get_value('Outward Bank Payment', obp_doc.name, 'workflow_state')
-				frappe.db.set_value('SD Bulk Payout Details',{
-					'parent': doc.name,
-					'name': row.name,
-				},'outward_bank_payment', obp_doc.name)
-				initiate_transaction_without_otp(obp_doc.name)
+			# Close any open snapshot from a prior iteration, then acquire
+			# a session advisory lock BEFORE the first read of this
+			# iteration. While we hold the lock no other worker can be
+			# committing to tabSeries, so the snapshot established by
+			# exists() stays consistent through save()'s SELECT ... FOR
+			# UPDATE on tabSeries — error 1020 cannot occur.
 			frappe.db.commit()
+			acquired = frappe.db.sql(
+				"SELECT GET_LOCK(%s, 30)", (_OBP_INSERT_LOCK,)
+			)[0][0]
+			if not acquired:
+				frappe.throw(_("Could not acquire OBP insert lock (timeout)."))
+			try:
+				if not frappe.db.exists('Outward Bank Payment', data):
+					data['doctype'] = 'Outward Bank Payment'
+					obp_doc = frappe.get_doc(data)
+					obp_doc.save(ignore_permissions=True)
+					obp_doc.submit()
+					status = frappe.db.get_value('Outward Bank Payment', obp_doc.name, 'workflow_state')
+					frappe.db.set_value('SD Bulk Payout Details',{
+						'parent': doc.name,
+						'name': row.name,
+					},'outward_bank_payment', obp_doc.name)
+					initiate_transaction_without_otp(obp_doc.name)
+				frappe.db.commit()
+			finally:
+				frappe.db.sql("SELECT RELEASE_LOCK(%s)", (_OBP_INSERT_LOCK,))
 		except:
 			error_message = frappe.get_traceback()+"\n\n BOBP Name: \n"+ doc.name
 			frappe.log_error(error_message, "OBP Record Creation Error")
@@ -127,13 +150,13 @@ def process_scheduled_payouts():
 		filters={
 			'is_scheduled': 1,
 			'is_schedule_completed': 0,
-			'is_completed': 0, 
+			'is_completed': 0,
 			'workflow_state': 'Scheduled',
 			"scheduled_time": (
 				"<=",
 				n,
 			),
-		}, 
+		},
 		fields=["name"]
 	)
 	for row in scheduled_payouts:
