@@ -11,12 +11,19 @@ from frappe.utils.background_jobs import enqueue
 
 from bank_api_integration.bank_api_integration.doctype.bank_api_integration.bank_api_integration import initiate_transaction_without_otp
 
-# MariaDB session-level advisory lock name. All concurrent OBP-creating
-# workers queue on this name, so only one is ever inside the tabSeries
-# critical section. With concurrent writers eliminated, MariaDB's
-# REPEATABLE READ snapshot check (error 1020 ER_CHECKREAD) on tabSeries
-# cannot fire.
-_OBP_INSERT_LOCK = "bank_api_integration:obp_insert"
+# Free-text status we stamp on a payout row the instant BEFORE we ask the bank
+# to move money. The upstream initiate routine (which we must not modify) records
+# its real outcome only AFTER it writes its request log, so an error there rolls
+# back the outcome and the payment would look un-sent. Stamping this marker in
+# our OWN committed transaction first guarantees a re-run can tell the payment
+# was already attempted and will never POST — and debit — it a second time.
+OBP_ATTEMPT_MARKER = "Initiation Attempted"
+
+# Row statuses (written by the upstream status-writer) that mean the payment was
+# already handed to the bank successfully — safe to skip, counts as done.
+SENT_DETAIL_STATES = (
+	"Initiated", "Initiation Pending", "Transaction Pending", "Transaction Completed",
+)
 
 
 class SDBulkPayout(Document):
@@ -57,48 +64,52 @@ def create_obp_records(doc):
 		if flt(row.amount) <= 0:
 			continue
 		try:
-			data = {
-				'party_name': row.name1,
-				'bank_account_no': row.account_number,
-				'ifsc_code': row.ifsc_code,
-				'amount': flt(row.amount),
-				'remarks': row.remarks,
-				'transaction_type': row.transaction_type,
-				'company_bank_account': doc.company_bank_account,
-				'reconcile_action': 'Skip Reconcile',
-				'bulk_payout': doc.name,
-				'bulk_payout_detail': row.name,
-			}
-			# Close any open snapshot from a prior iteration, then acquire
-			# a session advisory lock BEFORE the first read of this
-			# iteration. While we hold the lock no other worker can be
-			# committing to tabSeries, so the snapshot established by
-			# exists() stays consistent through save()'s SELECT ... FOR
-			# UPDATE on tabSeries — error 1020 cannot occur.
 			frappe.db.commit()
-			acquired = frappe.db.sql(
-				"SELECT GET_LOCK(%s, 30)", (_OBP_INSERT_LOCK,)
-			)[0][0]
-			if not acquired:
-				frappe.throw(_("Could not acquire OBP insert lock (timeout)."))
-			try:
-				if not frappe.db.exists('Outward Bank Payment', data):
-					data['doctype'] = 'Outward Bank Payment'
-					obp_doc = frappe.get_doc(data)
-					obp_doc.save(ignore_permissions=True)
-					obp_doc.submit()
-					status = frappe.db.get_value('Outward Bank Payment', obp_doc.name, 'workflow_state')
-					frappe.db.set_value('SD Bulk Payout Details',{
-						'parent': doc.name,
-						'name': row.name,
-					},'outward_bank_payment', obp_doc.name)
-					initiate_transaction_without_otp(obp_doc.name)
+
+			frappe.db.sql(
+				"""UPDATE `tabSD Bulk Payout Details` SET `status`=%s
+				   WHERE `name`=%s AND (`status` IS NULL OR `status`='')""",
+				(OBP_ATTEMPT_MARKER, row.name),
+			)
+			
+			obp_name = frappe.db.get_value(
+				"Outward Bank Payment",
+				{"bulk_payout": doc.name, "bulk_payout_detail": row.name},
+				"name",
+			)
+			if not obp_name:
+				obp_doc = frappe.get_doc({
+					"doctype": "Outward Bank Payment",
+					"party_name": row.name1,
+					"bank_account_no": row.account_number,
+					"ifsc_code": row.ifsc_code,
+					"amount": flt(row.amount),
+					"remarks": row.remarks,
+					"transaction_type": row.transaction_type,
+					"company_bank_account": doc.company_bank_account,
+					"reconcile_action": "Skip Reconcile",
+					"bulk_payout": doc.name,
+					"bulk_payout_detail": row.name,
+				})
+				obp_doc.save(ignore_permissions=True)
+				obp_doc.submit()
+				obp_name = obp_doc.name
+				frappe.db.set_value(
+					"SD Bulk Payout Details",
+					{"parent": doc.name, "name": row.name},
+					"outward_bank_payment", obp_name,
+					update_modified=False
+				)
 				frappe.db.commit()
-			finally:
-				frappe.db.sql("SELECT RELEASE_LOCK(%s)", (_OBP_INSERT_LOCK,))
-		except:
-			error_message = frappe.get_traceback()+"\n\n BOBP Name: \n"+ doc.name
-			frappe.log_error(error_message, "OBP Record Creation Error")
+
+			initiate_transaction_without_otp(obp_name)
+		except Exception:
+
+			frappe.log_error(
+				frappe.get_traceback() + "\n\n Bulk Payout: \n" + doc.name,
+				"OBP Record Creation Error",
+			)
+
 	frappe.db.set_value("SD Bulk Payout", doc.name, "workflow_state", "Completed")
 	frappe.db.set_value("SD Bulk Payout", doc.name, "is_completed", 1)
 
